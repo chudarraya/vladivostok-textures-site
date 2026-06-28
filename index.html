@@ -1,1 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Город как текстура | Владивосток</title>
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="loader">
+      <div class="loader-title">ЗАГРУЗКА АРХИВА</div>
+      <div class="loader-progress">
+        <div id="progress-bar"></div>
+      </div>
+      <div id="progress-text">0% (0/523)</div>
+    </div>
+    <div id="canvas-container"></div>
+    <div id="overlay"></div>
+    
+    <div id="header">
+      <div id="project-title">Digital_Art_Archive_VDK</div>
+      <div id="project-author">by chu.da_ai/ · 2026</div>
+    </div>
 
+    <div id="info-panel">
+      <div id="info-header">
+        <div id="info-name">ТЕКСТУРА</div>
+        <div id="info-close">✕</div>
+      </div>
+      <div id="info-grid">
+        <div class="info-row"><span class="label">Категория</span><span class="value" id="val-category">—</span></div>
+        <div class="info-row"><span class="label">Материал</span><span class="value" id="val-material">—</span></div>
+        <div class="info-row"><span class="label">Район</span><span class="value" id="val-district">—</span></div>
+        <div class="info-row"><span class="label">Что это</span><span class="value" id="val-what">—</span></div>
+        <div class="info-row"><span class="label">Номер</span><span class="value" id="val-id">—</span></div>
+      </div>
+      <div class="info-row" style="grid-column:1/-1;margin-top:12px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)">
+        <a id="download-btn" href="#" download target="_blank" style="display:none;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:15px;font-weight:500;text-decoration:none;transition:all .2s;cursor:pointer;width:fit-content">
+          <span>⬇️</span> Скачать оригинал
+        </a>
+      </div>
+      <div id="info-hint">нажмите в пустое место или ESC чтобы закрыть</div>
+    </div>
+
+    <div id="mode-toggle"><div id="mode-icon">🗺️</div><div id="mode-label">Кластеры</div></div>
+    <div id="cluster-sort-controls" class="hidden">
+      <button id="sort-district" class="sort-btn active" data-sort="district">📍 Районы</button>
+      <button id="sort-category" class="sort-btn" data-sort="category">🎨 Категории</button>
+    </div>
+    <div id="mode-hint" class="hidden">
+      <div class="hint-title">Режим кластеров</div>
+      <div class="hint-text">Текстуры группируются по выбранному признаку.<br><strong>Линии связывают их по второму признаку</strong>.</div>
+    </div>
+    <div id="controls-hint">перетаскивайте • колёсико • клик</div>
+  </div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
