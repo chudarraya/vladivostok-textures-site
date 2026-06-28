@@ -2,7 +2,6 @@ import { SceneManager } from './scene.js';
 import { TextureLoader } from './loader.js';
 import { CategoryParser } from './parser.js';
 import { CONFIG } from './config.js';
-// дальше код...
 
 // DOM элементы
 const els = {
