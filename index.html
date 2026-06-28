@@ -319,64 +319,56 @@
       drawLinks(); renderer.render(scene,camera);
     }
 
-    function createNode(data, texture, aspect){
-  const p = parseCategory(data.c);
-  
-  // 👇 СОЗДАЁМ ГЕОМЕТРИЮ С ПРАВИЛЬНЫМИ РАЗМЕРАМИ СРАЗУ (не масштабируем потом!)
-  const width = aspect * CONFIG.TEX_SIZE;
-  const height = CONFIG.TEX_SIZE;
-  const geo = new THREE.PlaneGeometry(width, height);
-  
-  // 👇 ПРАВИЛЬНЫЕ НАСТРОЙКИ ТЕКСТУРЫ ДЛЯ r128
-  texture.encoding = THREE.sRGBEncoding;
-  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  texture.needsUpdate = true;
-  
-  const mat = new THREE.MeshBasicMaterial({
-    map: texture,
-    transparent: true,
-    opacity: 1,
-    side: THREE.DoubleSide
-  });
-  
-  const mesh = new THREE.Mesh(geo, mat);
-  
-  // Позиция в хаосе
-  const chaos = {
-    x: (Math.random() - 0.5) * 25,
-    y: (Math.random() - 0.5) * 12,
-    z: (Math.random() - 0.5) * 25
-  };
-  mesh.position.set(chaos.x, chaos.y, chaos.z);
-  
-  // Позиции для кластеров
-  const angCat = (CONFIG.CATS.indexOf(p.primary) / CONFIG.CATS.length) * Math.PI * 2;
-  const catPos = {
-    x: Math.cos(angCat) * CONFIG.CAT_R + (Math.random() - 0.5) * CONFIG.CAT_SPREAD,
-    y: (Math.random() - 0.5) * CONFIG.CAT_H,
-    z: Math.sin(angCat) * CONFIG.CAT_R + (Math.random() - 0.5) * CONFIG.CAT_SPREAD
-  };
-  
-  const distC = CONFIG.DIST[data.dist] || {x:0, y:0, z:0};
-  const distPos = {
-    x: distC.x + (Math.random() - 0.5) * CONFIG.CLUSTER_R,
-    y: distC.y + (Math.random() - 0.5) * CONFIG.CAT_H,
-    z: distC.z + (Math.random() - 0.5) * CONFIG.CLUSTER_R
-  };
+    function drawLinks(){
+      state.links.forEach(l=>{group.remove(l.line);l.line.geometry.dispose();l.line.material.dispose()}); state.links=[];
+      if(!state.cluster) return;
+      const key=state.sort==='district'?'p.primary':'data.dist';
+      const grps={};
+      state.nodes.forEach(n=>{const k=key==='p.primary'?n.p.primary:n.data.dist;if(!grps[k])grps[k]=[];grps[k].push(n)});
+      Object.values(grps).forEach(g=>{
+        if(g.length<2) return;
+        g.forEach(n=>{
+          const near=g.filter(x=>x!==n).sort((a,b)=>n.mesh.position.distanceTo(a.mesh.position)-n.mesh.position.distanceTo(b.mesh.position)).slice(0,2);
+          near.forEach(t=>{
+            const geo=new THREE.BufferGeometry().setFromPoints([n.mesh.position.clone(),t.mesh.position.clone()]);
+            const mat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.06});
+            const line=new THREE.Line(geo,mat); group.add(line); state.links.push({line,n,t});
+          });
+        });
+      });
+    }
 
-  const node = {
-    mesh, data, p, chaos, catPos, distPos,
-    target: chaos,
-    anim: false,
-    originalAspect: aspect // сохраняем для отладки
-  };
-  
-  state.nodes.push(node);
-  group.add(mesh);
-  
-  loaded++;
-  if (loaded >= total) setTimeout(() => els.loader.classList.add('hidden'), 300);
-}
+    function setupUI(){
+      els.toggle.addEventListener('click',()=>{
+        state.cluster=!state.cluster;
+        els.toggle.classList.toggle('active',state.cluster);
+        els.mIcon.textContent=state.cluster?'[▣]':'[ ]'; els.mLabel.textContent=state.cluster?'Архив':'Кластеры';
+        els.sorts.classList.toggle('hidden',!state.cluster); els.sorts.classList.toggle('visible',state.cluster);
+        if(state.cluster) sortNodes(); else resetNodes();
+      });
+      els.sBtns.forEach(b=>b.addEventListener('click',()=>{
+        if(!state.cluster) return;
+        els.sBtns.forEach(x=>x.classList.remove('active')); b.classList.add('active');
+        state.sort=b.dataset.sort; sortNodes();
+      }));
+      els.close.addEventListener('click',()=>{els.panel.classList.remove('visible');els.dlBtn.style.display='none';state.sel=null;controls.autoRotate=true;state.nodes.forEach(n=>{n.mesh.scale.set(n.mesh.scale.x>1?1:1,1,1);n.mesh.material.opacity=1})});
+      els.toggle.addEventListener('mouseenter',()=>{els.hint.classList.remove('hidden');els.hint.classList.add('visible')});
+      els.toggle.addEventListener('mouseleave',()=>{els.hint.classList.remove('visible');setTimeout(()=>els.hint.classList.add('hidden'),400)});
+      addEventListener('keydown',e=>{if(e.key==='Escape')els.close.click()});
+      const cv=renderer.domElement; const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+      cv.addEventListener('click',e=>{
+        if(e.target.closest('#info-panel,#mode-toggle,#cluster-sort-controls')) return;
+        mouse.x=(e.clientX/cv.clientWidth)*2-1; mouse.y=-(e.clientY/cv.clientHeight)*2+1;
+        ray.setFromCamera(mouse,camera); const hits=ray.intersectObjects(state.nodes.map(n=>n.mesh));
+        if(hits.length){const n=state.nodes.find(x=>x.mesh===hits[0].object);if(n)selectNode(n)}else els.close.click();
+      });
+      cv.addEventListener('mousemove',e=>{
+        mouse.x=(e.clientX/cv.clientWidth)*2-1; mouse.y=-(e.clientY/cv.clientHeight)*2+1;
+        ray.setFromCamera(mouse,camera); const hits=ray.intersectObjects(state.nodes.map(n=>n.mesh));
+        state.nodes.forEach(n=>{if(n!==state.sel){n.mesh.scale.lerp(new THREE.Vector3(1,1,1),0.1);n.mesh.material.opacity=THREE.MathUtils.lerp(n.mesh.material.opacity,1,0.1)}});
+        if(hits.length){const n=state.nodes.find(x=>x.mesh===hits[0].object);if(n&&n!==state.sel){n.mesh.scale.lerp(new THREE.Vector3(n.mesh.scale.x*1.1,n.mesh.scale.y*1.1,1),0.15);cv.style.cursor='pointer'}}else{cv.style.cursor='grab'}
+      });
+    }
 
     function sortNodes(){ state.nodes.forEach(n=>{n.target=state.sort==='district'?n.distPos:n.catPos;n.anim=true}); setTimeout(drawLinks,1000); }
     function resetNodes(){ state.nodes.forEach(n=>{n.target=n.chaos;n.anim=true}); setTimeout(()=>{state.links.forEach(l=>{group.remove(l.line);l.line.geometry.dispose();l.line.material.dispose()});state.links=[]},1000); }
