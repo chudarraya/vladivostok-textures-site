@@ -2,8 +2,7 @@ import { SceneManager } from './scene.js';
 import { TextureLoader } from './loader.js';
 import { CategoryParser } from './parser.js';
 import { CONFIG } from './config.js';
-import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+// дальше код...
 
 // DOM элементы
 const els = {
