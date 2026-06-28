@@ -244,7 +244,8 @@
       document.getElementById('canvas-container').appendChild(renderer.domElement);
       controls=new THREE.OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.autoRotate=true; controls.autoRotateSpeed=0.18; controls.minDistance=1; controls.maxDistance=150;
       group=new THREE.Group(); scene.add(group);
-      scene.add(new THREE.AmbientLight(0xffffff,2)); scene.add(new THREE.DirectionalLight(0xffffff,1).translateTo(10,20,10));
+    scene.add(new THREE.AmbientLight(0xffffff,2));
+const dLight=new THREE.DirectionalLight(0xffffff,1); dLight.position.set(10,20,10); scene.add(dLight);
       addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
       
       loadTextures();
