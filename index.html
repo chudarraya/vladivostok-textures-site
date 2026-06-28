@@ -2,13 +2,12 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Город как текстура | Владивосток</title>
   <style>
     :root{--bg:#070707;--panel:rgba(18,18,22,.92);--text:#fff;--accent:#7ea9ff;--border:rgba(255,255,255,.07)}
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{width:100%;height:100%;overflow:hidden;background:#070707 !important;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;font-size:16px;touch-action:none}
-    #app{position:fixed;inset:0}
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body,#app{width:100%;height:100%;overflow:hidden;background:#070707 !important;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;font-size:16px;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:none}
     #canvas-container{position:absolute;inset:0;touch-action:none}
     canvas{display:block;touch-action:none;background:#070707}
     #overlay{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 0%,rgba(0,0,0,.25) 55%,rgba(0,0,0,.92) 100%);pointer-events:none;z-index:2}
@@ -18,45 +17,47 @@
     .loader-progress{width:min(320px,80vw);height:4px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.1)}
     #progress-bar{width:0%;height:100%;background:var(--accent);transition:width .2s}
     #progress-text{font-size:14px;color:rgba(255,255,255,.7)}
-    #header{position:absolute;top:24px;left:24px;z-index:20;pointer-events:none}
-    #project-title{font-size:18px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;opacity:.95;margin-bottom:6px}
-    #project-author{font-size:14px;opacity:.5}
-    #info-panel{position:absolute;top:24px;right:24px;width:92vw;max-width:640px;padding:24px 28px;background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;z-index:25;opacity:0;transform:translateY(-12px);transition:all .4s cubic-bezier(.16,1,.3,1);pointer-events:none;max-height:85vh;overflow-y:auto}
+    #header{position:absolute;top:32px;left:36px;z-index:20;pointer-events:none}
+    #project-title{font-size:20px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;opacity:.95;margin-bottom:6px}
+    #project-author{font-size:16px;opacity:.5}
+    #info-panel{position:absolute;top:32px;right:36px;width:640px;padding:32px 36px;background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;z-index:25;opacity:0;transform:translateY(-16px);transition:all .4s cubic-bezier(.16,1,.3,1);pointer-events:none}
     #info-panel.visible{opacity:1;transform:translateY(0);pointer-events:auto}
-    #info-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.05)}
-    #info-name{font-size:24px;font-weight:600;line-height:1.1}
-    #info-close{font-size:24px;opacity:.5;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:.2s}
+    #info-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.05)}
+    #info-name{font-size:32px;font-weight:600;line-height:1.1}
+    #info-close{font-size:28px;opacity:.5;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:.2s}
     #info-close:hover{opacity:1;background:rgba(255,255,255,.08)}
-    #info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;margin-bottom:16px}
-    .info-row{display:flex;flex-direction:column;gap:4px}
-    .label{font-size:14px;opacity:.45;letter-spacing:.02em;text-transform:uppercase;font-weight:500}
-    .value{font-size:18px;font-weight:500;line-height:1.3}
-    #info-hint{font-size:14px;opacity:.35;text-align:right;margin-top:8px}
+    #info-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 28px;margin-bottom:20px}
+    .info-row{display:flex;flex-direction:column;gap:6px}
+    .label{font-size:16px;opacity:.45;letter-spacing:.02em;text-transform:uppercase;font-weight:500}
+    .value{font-size:20px;font-weight:500;line-height:1.3}
+    #info-hint{font-size:16px;opacity:.35;text-align:right;margin-top:8px}
     #download-btn:hover{background:rgba(255,255,255,.2)!important;transform:translateY(-1px)}
-    #mode-toggle{position:absolute;bottom:20px;right:20px;display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(18,18,22,.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:24px;color:#fff;cursor:pointer;z-index:15;transition:.3s}
+    #mode-toggle{position:absolute;bottom:28px;right:36px;display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(18,18,22,.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:30px;color:#fff;cursor:pointer;z-index:15;transition:.3s}
     #mode-toggle:hover{background:rgba(18,18,22,.95);border-color:rgba(255,255,255,.2)}
     #mode-toggle.active{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)}
-    #mode-icon{font-size:14px;font-weight:600}
-    #mode-label{font-size:14px;font-weight:500;letter-spacing:.02em}
-    #cluster-sort-controls{position:absolute;bottom:20px;right:180px;display:flex;gap:4px;padding:6px;background:rgba(18,18,22,.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:24px;z-index:15;transition:.3s}
+    #mode-icon{font-size:16px;font-weight:600}
+    #mode-label{font-size:16px;font-weight:500;letter-spacing:.02em}
+    #cluster-sort-controls{position:absolute;bottom:28px;right:230px;display:flex;gap:6px;padding:8px;background:rgba(18,18,22,.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:30px;z-index:15;transition:.3s}
     #cluster-sort-controls.visible{opacity:1;transform:translateY(0)}
     #cluster-sort-controls.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
-    .sort-btn{padding:6px 12px;background:transparent;border:none;color:rgba(255,255,255,.6);font-size:12px;font-weight:500;cursor:pointer;border-radius:20px;transition:.2s}
+    .sort-btn{padding:8px 14px;background:transparent;border:none;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;cursor:pointer;border-radius:20px;transition:.2s}
     .sort-btn:hover{color:#fff;background:rgba(255,255,255,.1)}
     .sort-btn.active{color:#fff;background:rgba(255,255,255,.2)}
-    #mode-hint{position:absolute;bottom:70px;right:20px;width:280px;padding:16px 20px;background:rgba(18,18,22,.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;z-index:14;opacity:0;transform:translateY(10px);transition:.4s;pointer-events:none}
+    #mode-hint{position:absolute;bottom:90px;right:36px;width:340px;padding:20px 24px;background:rgba(18,18,22,.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:16px;color:#fff;z-index:14;opacity:0;transform:translateY(10px);transition:.4s;pointer-events:none}
     #mode-hint.visible{opacity:1;transform:translateY(0)}
     #mode-hint.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
-    .hint-title{font-size:16px;font-weight:600;margin-bottom:8px}
-    .hint-text{font-size:14px;line-height:1.5;color:rgba(255,255,255,.75)}
+    .hint-title{font-size:18px;font-weight:600;margin-bottom:12px}
+    .hint-text{font-size:16px;line-height:1.6;color:rgba(255,255,255,.75)}
     .hint-text strong{color:#fff}
-    #controls-hint{position:absolute;bottom:20px;left:20px;color:rgba(255,255,255,.4);font-size:14px;letter-spacing:.02em;z-index:15;pointer-events:none}
+    #controls-hint{position:absolute;bottom:28px;left:36px;color:rgba(255,255,255,.4);font-size:16px;letter-spacing:.02em;z-index:15;pointer-events:none}
+    @media(max-width:1100px){#info-panel{width:480px;padding:28px 32px}#info-grid{grid-template-columns:1fr}}
     @media(max-width:700px){
-      #info-panel{top:auto;bottom:80px;right:16px;left:16px;width:auto;padding:20px 24px}
-      #info-grid{grid-template-columns:1fr}
-      .value{font-size:16px}
-      #mode-toggle{bottom:16px;right:16px}
-      #cluster-sort-controls{bottom:16px;right:16px;left:16px;justify-content:center}
+      #header{top:24px;left:24px}#project-title{font-size:18px}
+      #info-panel{top:auto;bottom:90px;right:24px;left:24px;width:auto;padding:26px 28px}
+      #mode-toggle{bottom:24px;right:24px}
+      #cluster-sort-controls{bottom:24px;right:auto;left:50%;transform:translateX(-50%)}
+      #cluster-sort-controls.visible{transform:translateX(-50%) translateY(0)}
+      #cluster-sort-controls.hidden{transform:translateX(-50%) translateY(10px)}
       #controls-hint{display:none}
     }
   </style>
@@ -76,7 +77,7 @@
         <div class="info-row"><span class="label">Номер</span><span class="value" id="val-id">—</span></div>
       </div>
       <div class="info-row" style="grid-column:1/-1;margin-top:12px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)">
-        <a id="download-btn" href="#" download target="_blank" style="display:none;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:14px;font-weight:500;text-decoration:none;transition:all .2s;cursor:pointer;width:fit-content"><span>↓</span> Скачать оригинал</a>
+        <a id="download-btn" href="#" download target="_blank" style="display:none;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:15px;font-weight:500;text-decoration:none;transition:all .2s;cursor:pointer;width:fit-content"><span>↓</span> Скачать оригинал</a>
       </div>
       <div id="info-hint">нажмите в пустое место или ESC чтобы закрыть</div>
     </div>
@@ -98,8 +99,6 @@
       BG:0x070707, FOG:0x070707, FOG_NEAR:35, FOG_FAR:140,
       CAM_Z:60, TEX_SIZE:2.8, FOCUS:4, DIM:0.02,
       CLUSTER_R:8, CAT_R:45, CAT_SPREAD:8, CAT_H:6,
-      // 👇 МИН. ДИСТАНЦИЯ ЗУМА УМЕНЬШЕНА ДЛЯ БЛИЗКОГО ПРИБЛИЖЕНИЯ
-      MIN_ZOOM:0.1, MAX_ZOOM:150,
       DIST:{"Первомайский":{x:-20,y:5,z:-10},"Советский":{x:20,y:-3,z:-15},"Фрунзенский":{x:-15,y:-8,z:15},"Русский остров":{x:18,y:10,z:12}},
       CATS:["РЕШЁТКИ","ТРЕЩИНЫ","КАМЕНЬ","РАЗНОЕ","ПРИРОДА","УЛИЧНОЕ ИСКУССТВО","БЕТОН","КИРПИЧ","МЕТАЛЛ","ЛЮКИ И СТОКИ","ДОРОГА","ЧИСЛА","СТЕКЛО","ОБОРВАННАЯ РЕКЛАМА","ДЕРЕВО","БАФФИНГ","МОЗАИКА","ПЕСОК","СТЕНА","РЕКЛАМА","ЗНАКИ"],
       FIXES:{"ТЕРЕЩЕНЫ":"ТРЕЩИНЫ","БФФИНГ":"БАФФИНГ","СТЕННА":"СТЕНА","КАМЕМНЬ":"КАМЕНЬ","КАМНИ":"КАМЕНЬ","РЗНОЕ":"РАЗНОЕ","УЛИЧНОЕ ИСКУССТО":"УЛИЧНОЕ ИСКУССТВО","УЛИЧНОЕ ИСКУССВТО":"УЛИЧНОЕ ИСКУССТВО","УЛИЧЫНЕ ЗНАКИ":"УЛИЧНЫЕ ЗНАКИ","ДОРОГ":"ДОРОГА","РЕШЁТКА":"РЕШЁТКИ","МЕТАЛЛ КРЫША":"МЕТАЛЛ"}
@@ -237,60 +236,73 @@
     let scene,camera,renderer,controls,group,manager,loader,loaded=0,total=523;
 
     function init(){
-      document.body.style.background='#070707';
-      scene=new THREE.Scene(); scene.background=new THREE.Color(0x070707); scene.fog=new THREE.Fog(0x070707,35,140);
-      camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,1000); camera.position.set(0,0,60);
-      renderer=new THREE.WebGLRenderer({antialias:true,alpha:false}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight); renderer.setClearColor(0x070707,1);
+      // Принудительно чёрный фон на случай CSS-конфликтов
+      document.body.style.background = '#070707';
+      
+      scene=new THREE.Scene(); 
+      scene.background=new THREE.Color(0x070707); 
+      scene.fog=new THREE.Fog(0x070707,35,140);
+      
+      camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,1000); 
+      camera.position.set(0,0,60);
+      
+      renderer=new THREE.WebGLRenderer({antialias:true, alpha:false}); 
+      renderer.setPixelRatio(Math.min(devicePixelRatio,2)); 
+      renderer.setSize(innerWidth,innerHeight);
+      renderer.setClearColor(0x070707, 1);
       document.getElementById('canvas-container').appendChild(renderer.domElement);
-      controls=new THREE.OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.autoRotate=true; controls.autoRotateSpeed=0.18; 
-      // 👇 МИН. ЗУМ УМЕНЬШЕН ДЛЯ БЛИЗКОГО ПРИБЛИЖЕНИЯ
-      controls.minDistance=CONFIG.MIN_ZOOM; controls.maxDistance=CONFIG.MAX_ZOOM;
+      
+      controls=new THREE.OrbitControls(camera,renderer.domElement); 
+      controls.enableDamping=true; 
+      controls.autoRotate=true; 
+      controls.autoRotateSpeed=0.18; 
+      controls.minDistance=1; 
+      controls.maxDistance=150;
+      
       group=new THREE.Group(); scene.add(group);
-      scene.add(new THREE.AmbientLight(0xffffff,2.2)); const dirLight=new THREE.DirectionalLight(0xffffff,1.4); dirLight.position.set(10,20,10); scene.add(dirLight);
-      addEventListener('resize',onResize);
-      // 👇 МОБИЛЬНЫЕ ТАЧ-СОБЫТИЯ
-      setupTouch();
+      scene.add(new THREE.AmbientLight(0xffffff,2.2));
+      const dirLight=new THREE.DirectionalLight(0xffffff,1.4); 
+      dirLight.position.set(10,20,10); 
+      scene.add(dirLight);
+      
+      addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+      
       loadTextures();
       setupUI();
       animate();
     }
 
-    function onResize(){
-      camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight);
-    }
-
-    function setupTouch(){
-      let lastTouchEnd=0;
-      document.addEventListener('touchend',e=>{
-        const now=Date.now(); if(now-lastTouchEnd<=300) e.preventDefault(); lastTouchEnd=now;
-      },{passive:false});
-    }
-
     function loadTextures(){
       manager=new THREE.LoadingManager();
-      manager.onProgress=(url,loadedCount,totalCount)=>{
-        const pct=Math.round((loadedCount/totalCount)*100);
-        els.bar.style.width=`${pct}%`; els.txt.textContent=`${pct}% (${loadedCount}/${totalCount})`;
+      manager.onProgress=(url, loaded, total)=>{
+        const pct=Math.round((loaded/total)*100);
+        els.bar.style.width=`${pct}%`; els.txt.textContent=`${pct}% (${loaded}/${total})`;
       };
-      manager.onLoad=()=>{ setTimeout(()=>els.loader.classList.add('hidden'),300); console.log('✅ Все текстуры загружены'); };
-      manager.onError=(url)=>{ console.warn('❌ Ошибка:',url); };
+      manager.onLoad=()=>{
+        setTimeout(()=>els.loader.classList.add('hidden'),300);
+        console.log('✅ Все текстуры загружены');
+      };
+      manager.onError=(url)=>{ console.warn('❌ Ошибка загрузки:', url); };
+      
       loader=new THREE.TextureLoader(manager);
       
       RAW_DATA.forEach(d=>{
         const fmt=d.i===1?'png':'JPG';
         const url=`https://raw.githubusercontent.com/chudarraya/vladivostok-textures/main/1%20(${d.i}).${fmt}`;
-        // 👇 ЗАГРУЖАЕМ ЧЕРЕЗ Image() ДЛЯ ПОЛУЧЕНИЯ РЕАЛЬНЫХ ПРОПОРЦИЙ
+        
+        // Загружаем через Image для получения пропорций
         const img=new Image(); img.crossOrigin='anonymous'; img.src=url;
         img.onload=()=>{
           const aspect=img.width/img.height;
-          const tex=loader.load(url);
-          createNode(d,tex,aspect);
+          const tex=loader.load(url); // кэшируется менеджером
+          createNode(d, tex, aspect);
         };
         img.onerror=()=>{
+          // Fallback если картинка не грузится
           const cv=document.createElement('canvas'); cv.width=cv.height=128;
           const ctx=cv.getContext('2d'); ctx.fillStyle='#222'; ctx.fillRect(0,0,128,128);
           ctx.fillStyle='#666'; ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText('ERR',64,70);
-          createNode(d,new THREE.CanvasTexture(cv),1);
+          createNode(d, new THREE.CanvasTexture(cv), 1);
         };
       });
     }
@@ -300,27 +312,35 @@
       const geo=new THREE.PlaneGeometry(1,1);
       const mat=new THREE.MeshBasicMaterial({map:texture,transparent:true,opacity:1,side:THREE.DoubleSide});
       const mesh=new THREE.Mesh(geo,mat);
-      // 👇 ПРИМЕНЯЕМ ПРОПОРЦИИ ЧЕРЕЗ scale
-      mesh.scale.set(aspect*CONFIG.TEX_SIZE, CONFIG.TEX_SIZE, 1);
+      mesh.scale.set(aspect * CONFIG.TEX_SIZE, CONFIG.TEX_SIZE, 1);
+      
       const chaos={x:(Math.random()-.5)*25,y:(Math.random()-.5)*12,z:(Math.random()-.5)*25};
       mesh.position.set(chaos.x,chaos.y,chaos.z);
+      
       const angCat=(CONFIG.CATS.indexOf(p.primary)/CONFIG.CATS.length)*Math.PI*2;
       const catPos={x:Math.cos(angCat)*CONFIG.CAT_R+(Math.random()-.5)*CONFIG.CAT_SPREAD,y:(Math.random()-.5)*CONFIG.CAT_H,z:Math.sin(angCat)*CONFIG.CAT_R+(Math.random()-.5)*CONFIG.CAT_SPREAD};
       const distC=CONFIG.DIST[data.dist]||{x:0,y:0,z:0};
       const distPos={x:distC.x+(Math.random()-.5)*CONFIG.CLUSTER_R,y:distC.y+(Math.random()-.5)*CONFIG.CAT_H,z:distC.z+(Math.random()-.5)*CONFIG.CLUSTER_R};
+
       const node={mesh,data,p,chaos,catPos,distPos,target:chaos,anim:false};
       state.nodes.push(node); group.add(mesh);
-      loaded++; if(loaded>=total) setTimeout(()=>els.loader.classList.add('hidden'),300);
+      loaded++;
+      if(loaded>=total) setTimeout(()=>els.loader.classList.add('hidden'),300);
     }
 
     function animate(){
       requestAnimationFrame(animate); controls.update();
-      state.nodes.forEach(n=>{ if(n.anim) n.mesh.position.lerp(n.target,0.06); n.mesh.lookAt(camera.position); });
-      drawLinks(); renderer.render(scene,camera);
+      state.nodes.forEach(n=>{
+        if(n.anim) n.mesh.position.lerp(n.target,0.06);
+        n.mesh.lookAt(camera.position);
+      });
+      drawLinks();
+      renderer.render(scene,camera);
     }
 
     function drawLinks(){
-      state.links.forEach(l=>{group.remove(l.line);l.line.geometry.dispose();l.line.material.dispose()}); state.links=[];
+      state.links.forEach(l=>{group.remove(l.line);l.line.geometry.dispose();l.line.material.dispose()});
+      state.links=[];
       if(!state.cluster) return;
       const key=state.sort==='district'?'p.primary':'data.dist';
       const grps={};
@@ -342,8 +362,10 @@
       els.toggle.addEventListener('click',()=>{
         state.cluster=!state.cluster;
         els.toggle.classList.toggle('active',state.cluster);
-        els.mIcon.textContent=state.cluster?'[▣]':'[ ]'; els.mLabel.textContent=state.cluster?'Архив':'Кластеры';
-        els.sorts.classList.toggle('hidden',!state.cluster); els.sorts.classList.toggle('visible',state.cluster);
+        els.mIcon.textContent=state.cluster?'[▣]':'[ ]';
+        els.mLabel.textContent=state.cluster?'Архив':'Кластеры';
+        els.sorts.classList.toggle('hidden',!state.cluster);
+        els.sorts.classList.toggle('visible',state.cluster);
         if(state.cluster) sortNodes(); else resetNodes();
       });
       els.sBtns.forEach(b=>b.addEventListener('click',()=>{
@@ -355,29 +377,41 @@
       els.toggle.addEventListener('mouseenter',()=>{els.hint.classList.remove('hidden');els.hint.classList.add('visible')});
       els.toggle.addEventListener('mouseleave',()=>{els.hint.classList.remove('visible');setTimeout(()=>els.hint.classList.add('hidden'),400)});
       addEventListener('keydown',e=>{if(e.key==='Escape')els.close.click()});
-      const cv=renderer.domElement; const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+      const cv=renderer.domElement;
+      const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
       cv.addEventListener('click',e=>{
         if(e.target.closest('#info-panel,#mode-toggle,#cluster-sort-controls')) return;
         mouse.x=(e.clientX/cv.clientWidth)*2-1; mouse.y=-(e.clientY/cv.clientHeight)*2+1;
-        ray.setFromCamera(mouse,camera); const hits=ray.intersectObjects(state.nodes.map(n=>n.mesh));
+        ray.setFromCamera(mouse,camera);
+        const hits=ray.intersectObjects(state.nodes.map(n=>n.mesh));
         if(hits.length){const n=state.nodes.find(x=>x.mesh===hits[0].object);if(n)selectNode(n)}else els.close.click();
       });
       cv.addEventListener('mousemove',e=>{
         mouse.x=(e.clientX/cv.clientWidth)*2-1; mouse.y=-(e.clientY/cv.clientHeight)*2+1;
         ray.setFromCamera(mouse,camera); const hits=ray.intersectObjects(state.nodes.map(n=>n.mesh));
-        state.nodes.forEach(n=>{if(n!==state.sel){n.mesh.scale.lerp(new THREE.Vector3(1,1,1),0.1);n.mesh.material.opacity=THREE.MathUtils.lerp(n.mesh.material.opacity,1,0.1)}});
-        if(hits.length){const n=state.nodes.find(x=>x.mesh===hits[0].object);if(n&&n!==state.sel){n.mesh.scale.lerp(new THREE.Vector3(n.mesh.scale.x*1.1,n.mesh.scale.y*1.1,1),0.15);cv.style.cursor='pointer'}}else{cv.style.cursor='grab'}
+        state.nodes.forEach(n=>{if(n!==state.sel){n.mesh.scale.lerp(new THREE.Vector3(n.p.primary==='РАЗНОЕ'?1:1,1,1),0.1);n.mesh.material.opacity=THREE.MathUtils.lerp(n.mesh.material.opacity,1,0.1)}});
+        if(hits.length){const n=state.nodes.find(x=>x.mesh===hits[0].object);if(n&&n!==state.sel){n.mesh.scale.lerp(new THREE.Vector3(n.mesh.scale.x*1.1, n.mesh.scale.y*1.1, 1),0.15);cv.style.cursor='pointer'}}else{cv.style.cursor='grab'}
       });
     }
 
-    function sortNodes(){ state.nodes.forEach(n=>{n.target=state.sort==='district'?n.distPos:n.catPos;n.anim=true}); setTimeout(drawLinks,1000); }
-    function resetNodes(){ state.nodes.forEach(n=>{n.target=n.chaos;n.anim=true}); setTimeout(()=>{state.links.forEach(l=>{group.remove(l.line);l.line.geometry.dispose();l.line.material.dispose()});state.links=[]},1000); }
+    function sortNodes(){
+      state.nodes.forEach(n=>{n.target=state.sort==='district'?n.distPos:n.catPos;n.anim=true});
+      setTimeout(drawLinks,1000);
+    }
+    function resetNodes(){
+      state.nodes.forEach(n=>{n.target=n.chaos;n.anim=true});
+      setTimeout(()=>{state.links.forEach(l=>{group.remove(l.line);l.line.geometry.dispose();l.line.material.dispose()});state.links=[]},1000);
+    }
     function selectNode(n){
-      if(state.sel) state.sel.mesh.scale.set(1,1,1);
-      state.sel=n; const scale=n.mesh.scale.x*CONFIG.FOCUS; n.mesh.scale.set(scale,scale,1); n.mesh.material.opacity=1;
+      if(state.sel) state.sel.mesh.scale.set(state.sel.mesh.scale.x>1?1:1,1,1);
+      state.sel=n; 
+      const scale = n.mesh.scale.x * CONFIG.FOCUS;
+      n.mesh.scale.set(scale, scale, 1); 
+      n.mesh.material.opacity=1;
       state.nodes.forEach(x=>{if(x!==n)x.mesh.material.opacity=CONFIG.DIM});
       els.vCat.textContent=n.p.raw; els.vMat.textContent='—'; els.vDist.textContent='—'; els.vWhat.textContent='—'; els.vId.textContent=`#${String(n.data.i).padStart(3,'0')}`;
-      els.dlBtn.href=n.data.url; els.dlBtn.download=`VDK_${String(n.data.i).padStart(3,'0')}_${n.p.primary.toLowerCase().replace(/[^a-zа-яё0-9]/g,'_')}.jpg`;
+      els.dlBtn.href=n.data.url;
+      els.dlBtn.download=`VDK_${String(n.data.i).padStart(3,'0')}_${n.p.primary.toLowerCase().replace(/[^a-zа-яё0-9]/g,'_')}.jpg`;
       els.dlBtn.style.display='inline-flex'; els.panel.classList.add('visible'); controls.autoRotate=false;
     }
 
