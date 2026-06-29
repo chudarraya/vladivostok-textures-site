@@ -675,19 +675,48 @@
       });
     }
 
-    function createNode(data,tex,asp){
-      const p=parseCat(data.c);
-      const geo=new THREE.PlaneGeometry(1,1); const mat=new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:1,side:THREE.DoubleSide});
-      const mesh=new THREE.Mesh(geo,mat); mesh.scale.set(asp*CONFIG.TEX_SIZE,CONFIG.TEX_SIZE,1);
-      const ch={x:(Math.random()-.5)*25,y:(Math.random()-.5)*12,z:(Math.random()-.5)*25}; mesh.position.set(ch.x,ch.y,ch.z);
-      const ang=(CONFIG.CATS.indexOf(p.pri)/CONFIG.CATS.length)*Math.PI*2;
-      const cp={x:Math.cos(ang)*CONFIG.CAT_R+(Math.random()-.5)*CONFIG.CAT_SPREAD,y:(Math.random()-.5)*CONFIG.CAT_H,z:Math.sin(ang)*CONFIG.CAT_R+(Math.random()-.5)*CONFIG.CAT_SPREAD};
-      const dc=CONFIG.DIST[data.d]||{x:0,y:0,z:0};
-      const dp={x:dc.x+(Math.random()-.5)*CONFIG.CLUSTER_R,y:dc.y+(Math.random()-.5)*CONFIG.CAT_H,z:dc.z+(Math.random()-.5)*CONFIG.CLUSTER_R};
-      const n={mesh,data,p,ch,cp,dp,target:ch,anim:false}; state.nodes.push(n); group.add(mesh); loaded++;
-      if(loaded>=total) setTimeout(()=>els.loader.classList.add('hidden'),300);
+        function createNode(data, texture, aspect) {
+      const p = parseCat(data.c);
+      
+      // 👇 СОЗДАЁМ ГЕОМЕТРИЮ СРЕДРАЗУ В НУЖНЫХ ПРОПОРЦИЯХ
+      const width = aspect * CONFIG.TEX_SIZE;
+      const height = CONFIG.TEX_SIZE;
+      const geo = new THREE.PlaneGeometry(width, height);
+      
+      const mat = new THREE.MeshBasicMaterial({
+        map: texture, 
+        transparent: true, 
+        opacity: 1, 
+        side: THREE.DoubleSide
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      
+      // 👇 МАСШТАБИРОВАНИЕ УБРАНО — геометрия уже точного размера
+      
+      const chaos = {x:(Math.random()-.5)*25, y:(Math.random()-.5)*12, z:(Math.random()-.5)*25};
+      mesh.position.set(chaos.x, chaos.y, chaos.z);
+      
+      const angCat = (CONFIG.CATS.indexOf(p.pri) / CONFIG.CATS.length) * Math.PI * 2;
+      const cp = {
+        x: Math.cos(angCat) * CONFIG.CAT_R + (Math.random()-.5) * CONFIG.CAT_SPREAD,
+        y: (Math.random()-.5) * CONFIG.CAT_H,
+        z: Math.sin(angCat) * CONFIG.CAT_R + (Math.random()-.5) * CONFIG.CAT_SPREAD
+      };
+      const dc = CONFIG.DIST[data.d] || {x:0, y:0, z:0};
+      const dp = {
+        x: dc.x + (Math.random()-.5) * CONFIG.CLUSTER_R,
+        y: dc.y + (Math.random()-.5) * CONFIG.CAT_H,
+        z: dc.z + (Math.random()-.5) * CONFIG.CLUSTER_R
+      };
+      
+      const n = {mesh, data, p, chaos, cp, dp, target: chaos, anim: false};
+      state.nodes.push(n);
+      group.add(mesh);
+      loaded++;
+      if (loaded >= total) setTimeout(() => els.loader.classList.add('hidden'), 300);
     }
 
+    
     function animate(){
       requestAnimationFrame(animate); controls.update();
       state.nodes.forEach(n=>{if(n.anim)n.mesh.position.lerp(n.target,0.06);n.mesh.lookAt(camera.position);});
