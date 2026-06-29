@@ -1,619 +1,421 @@
-<!-- ===================================================== -->
-<!--     Digital_Art_Archive_VDK — STABLE EDITION          -->
-<!--              author: chu.da_ai/ · 2026                -->
-<!-- ===================================================== -->
-
-<div id="app">
-    <div id="canvas-container"></div>
-    <div id="overlay"></div>
-
-    <!-- HEADER: TOP LEFT -->
-    <div id="header">
-        <div id="project-title">Digital_Art_Archive_VDK</div>
-        <div id="project-author">by chu.da_ai/ · 2026</div>
-    </div>
-
-    <!-- INFO PANEL: TOP RIGHT -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Город как текстура | Владивосток</title>
+  <style>
+    :root{--bg:#070707;--panel:rgba(18,18,22,.92);--text:#fff;--accent:#7ea9ff;--border:rgba(255,255,255,.07)}
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body,#app{width:100%;height:100%;overflow:hidden;background:#070707 !important;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;font-size:16px;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:none}
+    #canvas-container{position:absolute;inset:0;touch-action:none}
+    canvas{display:block;touch-action:none;background:#070707}
+    #overlay{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 0%,rgba(0,0,0,.25) 55%,rgba(0,0,0,.92) 100%);pointer-events:none;z-index:2}
+    #loader{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;z-index:999;background:#070707;transition:opacity .5s}
+    #loader.hidden{opacity:0;pointer-events:none}
+    .loader-title{font-size:18px;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+    .loader-progress{width:min(320px,80vw);height:4px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.1)}
+    #progress-bar{width:0%;height:100%;background:var(--accent);transition:width .2s}
+    #progress-text{font-size:14px;color:rgba(255,255,255,.7)}
+    #header{position:absolute;top:32px;left:36px;z-index:20;pointer-events:none}
+    #project-title{font-size:20px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;opacity:.95;margin-bottom:6px}
+    #project-author{font-size:16px;opacity:.5}
+    #info-panel{position:absolute;top:32px;right:36px;width:640px;padding:32px 36px;background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;z-index:25;opacity:0;transform:translateY(-16px);transition:all .4s cubic-bezier(.16,1,.3,1);pointer-events:none}
+    #info-panel.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+    #info-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.05)}
+    #info-name{font-size:32px;font-weight:600;line-height:1.1}
+    #info-close{font-size:28px;opacity:.5;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:.2s}
+    #info-close:hover{opacity:1;background:rgba(255,255,255,.08)}
+    #info-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 28px;margin-bottom:20px}
+    .info-row{display:flex;flex-direction:column;gap:6px}
+    .label{font-size:16px;opacity:.45;letter-spacing:.02em;text-transform:uppercase;font-weight:500}
+    .value{font-size:20px;font-weight:500;line-height:1.3}
+    #info-hint{font-size:16px;opacity:.35;text-align:right;margin-top:8px}
+    #download-btn:hover{background:rgba(255,255,255,.2)!important;transform:translateY(-1px)}
+    #mode-toggle{position:absolute;bottom:28px;right:36px;display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(18,18,22,.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:30px;color:#fff;cursor:pointer;z-index:15;transition:.3s}
+    #mode-toggle:hover{background:rgba(18,18,22,.95);border-color:rgba(255,255,255,.2)}
+    #mode-toggle.active{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)}
+    #mode-icon{font-size:16px;font-weight:600}
+    #mode-label{font-size:16px;font-weight:500;letter-spacing:.02em}
+    #cluster-sort-controls{position:absolute;bottom:28px;right:230px;display:flex;gap:6px;padding:8px;background:rgba(18,18,22,.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:30px;z-index:15;transition:.3s}
+    #cluster-sort-controls.visible{opacity:1;transform:translateY(0)}
+    #cluster-sort-controls.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
+    .sort-btn{padding:8px 14px;background:transparent;border:none;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;cursor:pointer;border-radius:20px;transition:.2s}
+    .sort-btn:hover{color:#fff;background:rgba(255,255,255,.1)}
+    .sort-btn.active{color:#fff;background:rgba(255,255,255,.2)}
+    #mode-hint{position:absolute;bottom:90px;right:36px;width:340px;padding:20px 24px;background:rgba(18,18,22,.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:16px;color:#fff;z-index:14;opacity:0;transform:translateY(10px);transition:.4s;pointer-events:none}
+    #mode-hint.visible{opacity:1;transform:translateY(0)}
+    #mode-hint.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
+    .hint-title{font-size:18px;font-weight:600;margin-bottom:12px}
+    .hint-text{font-size:16px;line-height:1.6;color:rgba(255,255,255,.75)}
+    .hint-text strong{color:#fff}
+    #controls-hint{position:absolute;bottom:28px;left:36px;color:rgba(255,255,255,.4);font-size:16px;letter-spacing:.02em;z-index:15;pointer-events:none}
+    @media(max-width:1100px){#info-panel{width:480px;padding:28px 32px}#info-grid{grid-template-columns:1fr}}
+    @media(max-width:700px){
+      #header{top:24px;left:24px}#project-title{font-size:18px}
+      #info-panel{top:auto;bottom:90px;right:24px;left:24px;width:auto;padding:26px 28px}
+      #mode-toggle{bottom:24px;right:24px}
+      #cluster-sort-controls{bottom:24px;right:auto;left:50%;transform:translateX(-50%)}
+      #cluster-sort-controls.visible{transform:translateX(-50%) translateY(0)}
+      #cluster-sort-controls.hidden{transform:translateX(-50%) translateY(10px)}
+      #controls-hint{display:none}
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="loader"><div class="loader-title">ЗАГРУЗКА АРХИВА</div><div class="loader-progress"><div id="progress-bar"></div></div><div id="progress-text">0% (0/523)</div></div>
+    <div id="canvas-container"></div><div id="overlay"></div>
+    <div id="header"><div id="project-title">Digital_Art_Archive_VDK</div><div id="project-author">by chu.da_ai/ · 2026</div></div>
     <div id="info-panel">
-        <div id="info-header">
-            <div id="info-name">TEXTURE</div>
-            <div id="info-close">✕</div>
-        </div>
-        <div id="info-grid">
-            <div class="info-row">
-                <span class="label">Название</span>
-                <span class="value" id="val-name">—</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Район</span>
-                <span class="value" id="val-district">—</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Материал</span>
-                <span class="value" id="val-material">—</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Что это</span>
-                <span class="value" id="val-what">—</span>
-            </div>
-            <div class="info-row">
-                <span class="label">ID</span>
-                <span class="value" id="val-id">—</span>
-            </div>
-        </div>
-        <div id="info-hint">нажмите в пустое место или ESC чтобы закрыть</div>
+      <div id="info-header"><div id="info-name">ТЕКСТУРА</div><div id="info-close">×</div></div>
+      <div id="info-grid">
+        <div class="info-row"><span class="label">Категория</span><span class="value" id="val-category">—</span></div>
+        <div class="info-row"><span class="label">Материал</span><span class="value" id="val-material">—</span></div>
+        <div class="info-row"><span class="label">Район</span><span class="value" id="val-district">—</span></div>
+        <div class="info-row"><span class="label">Что это</span><span class="value" id="val-what">—</span></div>
+        <div class="info-row"><span class="label">Номер</span><span class="value" id="val-id">—</span></div>
+      </div>
+      <div class="info-row" style="grid-column:1/-1;margin-top:12px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)">
+        <a id="download-btn" href="#" download target="_blank" style="display:none;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:15px;font-weight:500;text-decoration:none;transition:all .2s;cursor:pointer;width:fit-content"><span>↓</span> Скачать оригинал</a>
+      </div>
+      <div id="info-hint">нажмите в пустое место или ESC чтобы закрыть</div>
     </div>
-
-    <!-- CONTROLS HINT -->
-    <div id="controls-hint">drag • wheel • click</div>
-
-    <!-- LOADER -->
-    <div id="loader">
-        <div class="loader-text">LOADING ARCHIVE</div>
+    <div id="mode-toggle"><div id="mode-icon">[ ]</div><div id="mode-label">Кластеры</div></div>
+    <div id="cluster-sort-controls" class="hidden">
+      <button id="sort-district" class="sort-btn active" data-sort="district">[Р] Районы</button>
+      <button id="sort-category" class="sort-btn" data-sort="category">[К] Категории</button>
     </div>
-</div>
+    <div id="mode-hint" class="hidden"><div class="hint-title">Режим кластеров</div><div class="hint-text">Текстуры группируются по выбранному признаку.<br><strong>Линии связывают их по второму признаку</strong>.</div></div>
+    <div id="controls-hint">перетаскивайте • колёсико • клик</div>
+  </div>
 
-<style>
-/* ===== BASE RESET ===== */
-html, body {
-    margin: 0; padding: 0;
-    background: #000;
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
-    font-size: 16px;
-}
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script>
+    // ================= CONFIG =================
+    const CONFIG = {
+      BG:0x070707, FOG:0x070707, FOG_NEAR:35, FOG_FAR:140,
+      CAM_Z:60, TEX_SIZE:2.8, FOCUS:4, DIM:0.02,
+      CLUSTER_R:8, CAT_R:45, CAT_SPREAD:8, CAT_H:6,
+      DIST:{"Первомайский":{x:-20,y:5,z:-10},"Советский":{x:20,y:-3,z:-15},"Фрунзенский":{x:-15,y:-8,z:15},"Русский остров":{x:18,y:10,z:12}},
+      CATS:["РЕШЁТКИ","ТРЕЩИНЫ","КАМЕНЬ","РАЗНОЕ","ПРИРОДА","УЛИЧНОЕ ИСКУССТВО","БЕТОН","КИРПИЧ","МЕТАЛЛ","ЛЮКИ И СТОКИ","ДОРОГА","ЧИСЛА","СТЕКЛО","ОБОРВАННАЯ РЕКЛАМА","ДЕРЕВО","БАФФИНГ","МОЗАИКА","ПЕСОК","СТЕНА","РЕКЛАМА","ЗНАКИ"],
+      FIXES:{"ТЕРЕЩЕНЫ":"ТРЕЩИНЫ","БФФИНГ":"БАФФИНГ","СТЕННА":"СТЕНА","КАМЕМНЬ":"КАМЕНЬ","КАМНИ":"КАМЕНЬ","РЗНОЕ":"РАЗНОЕ","УЛИЧНОЕ ИСКУССТО":"УЛИЧНОЕ ИСКУССТВО","УЛИЧНОЕ ИСКУССВТО":"УЛИЧНОЕ ИСКУССТВО","УЛИЧЫНЕ ЗНАКИ":"УЛИЧНЫЕ ЗНАКИ","ДОРОГ":"ДОРОГА","РЕШЁТКА":"РЕШЁТКИ","МЕТАЛЛ КРЫША":"МЕТАЛЛ"}
+    };
 
-#app {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: #000;
-    overflow: hidden;
-}
+    // ================= DATA =================
+    const RAW_DATA=[
+      {i:1,c:"РЕШЁТКИ"},{i:2,c:"РЕШЁТКИ"},{i:3,c:"РЕШЁТКИ"},{i:4,c:"РЕШЁТКИ"},{i:5,c:"РЕШЁТКИ"},
+      {i:6,c:"ТЕРЕЩЕНЫ"},{i:7,c:"ТЕРЕЩЕНЫ"},{i:8,c:"ТЕРЕЩЕНЫ"},{i:9,c:"КАМЕНЬ"},{i:10,c:"РАЗНОЕ"},
+      {i:11,c:"ПРИРОДА"},{i:12,c:"ПРИРОДА ДЕРЕВО"},{i:13,c:"ПРИРОДА ДЕРЕВО"},{i:14,c:"ПРИРОДА ДЕРЕВО"},{i:15,c:"ПРИРОДА"},
+      {i:16,c:"ПРИРОДА"},{i:17,c:"ПРИРОДА"},{i:18,c:"РАЗНОЕ"},{i:19,c:"РАЗНОЕ"},{i:20,c:"КАМЕНЬ"},
+      {i:21,c:"ПРИРОДА"},{i:22,c:"ПРИРОДА"},{i:23,c:"УЛИЧНОЕ ИСКУССТВО"},{i:24,c:"УЛИЧНОЕ ИСКУССТВО"},{i:25,c:"БЕТОН"},
+      {i:26,c:"УЛИЧНОЕ ИСКУССТВО"},{i:27,c:"УЛИЧНОЕ ИСКУССТВО"},{i:28,c:"КИРПИЧ БЕТОН"},{i:29,c:"ТРЕЩИНЫ МЕТАЛЛ"},{i:30,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:31,c:"УЛИЧНОЕ ИСКУССТВО РЕКЛАМА"},{i:32,c:"ТРЕЩИНЫ УЛИЧНОЕ ИСКУССТВО БЕТОН"},{i:33,c:"РЗНОЕ БЕТОН"},{i:34,c:"РЕШЁТКИ"},{i:35,c:"ЛЮКИ И СТОКИ"},
+      {i:36,c:"УЛИЧНОЕ ИСКУССТВО МЕТАЛЛ"},{i:37,c:"РЕШЁТКИ"},{i:38,c:"УЛИЧНЫЕ ЗНАКИ"},{i:39,c:"ДОРОГА"},{i:40,c:"ПРИРОДА"},
+      {i:41,c:"ПРИРОДА"},{i:42,c:"ПРИРОДА"},{i:43,c:"КИРПИЧ БЕТОН"},{i:44,c:"РЕШЁТКИ"},{i:45,c:"РЕШЁТКИ"},
+      {i:46,c:"БЕТОН"},{i:47,c:"БЕТОН РАЗНОЕ"},{i:48,c:"УЛИЧНОЕ ИСКУССТВО"},{i:49,c:"УЛИЧНОЕ ИСКУССТВО"},{i:50,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:51,c:"УЛИЧНОЕ ИСКУССТВО"},{i:52,c:"УЛИЧНОЕ ИСКУССТВО"},{i:53,c:"УЛИЧНОЕ ИСКУССТВО"},{i:54,c:"УЛИЧНОЕ ИСКУССТВО БЕТОН"},{i:55,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:56,c:"ЧИСЛА"},{i:57,c:"УЛИЧНОЕ ИСКУССТВО"},{i:58,c:"УЛИЧНЫЕ ЗНАКИ"},{i:59,c:"СТЕКЛО ДОРОГА"},{i:60,c:"ОБОРВАННАЯ РЕКЛАМА"},
+      {i:61,c:"ДЕРЕВО"},{i:62,c:"КИРПИЧ"},{i:63,c:"РЕШЁТКИ"},{i:64,c:"БЕТОН РЕКЛАМА"},{i:65,c:"БЕТОН РЕКЛАМА"},
+      {i:66,c:"БАФФИНГ"},{i:67,c:"ПРИРОДА ДОРОГА"},{i:68,c:"ДОРОГА"},{i:69,c:"РАЗНОЕ"},{i:70,c:"КИРПИЧ"},
+      {i:71,c:"СТЕНА ТРЕЩИНЫ"},{i:72,c:"РЕШЁТКИ"},{i:73,c:"РЕШЁТКИ"},{i:74,c:"ЧИСЛА"},{i:75,c:"РЕШЁТКИ"},
+      {i:76,c:"РЕШЁТКИ"},{i:77,c:"КИРПИЧ"},{i:78,c:"РЕШЁТКИ"},{i:79,c:"РЕШЁТКИ"},{i:80,c:"РЕШЁТКИ"},
+      {i:81,c:"ДОРОГА"},{i:82,c:"ДЕРЕВО"},{i:83,c:"ДОРОГА"},{i:84,c:"РЕШЁТКИ"},{i:85,c:"ПРИРОДА"},
+      {i:86,c:"ПРИРОДА"},{i:87,c:"КИРПИЧ"},{i:88,c:"ЧИСЛА"},{i:89,c:"ЧИСЛА"},{i:90,c:"ЧИСЛА"},
+      {i:91,c:"БЕТОН"},{i:92,c:"ДЕРЕВО"},{i:93,c:"ДОРОГА"},{i:94,c:"КИРПИЧ"},{i:95,c:"РЕШЁТКИ"},
+      {i:96,c:"ПРИРОДА"},{i:97,c:"МЕТАЛЛ ТРЕЩИНЫ"},{i:98,c:"ДОРОГА"},{i:99,c:"РАЗНОЕ БЕТОН"},{i:100,c:"КИРПИЧ"},
+      {i:101,c:"ПРИРОДА"},{i:102,c:"УЛИЧНЫЕ ЗНАКИ"},{i:103,c:"УЛИЧНЫЕ ЗНАКИ"},{i:104,c:"КИРПИЧ"},{i:105,c:"МЕТАЛЛ ТРЕЩИНЫ"},
+      {i:106,c:"ДЕРЕВО ТРЕЩИНЫ"},{i:107,c:"ЧИСЛА УЛИЧНЫЕ ЗНАКИ"},{i:108,c:"УЛИЧНЫЕ ЗНАКИ"},{i:109,c:"СТЕНА"},{i:110,c:"ЧИСЛА УЛИЧНЫЕ ЗНАКИ"},
+      {i:111,c:"РАЗНОЕ БЕТОН"},{i:112,c:"РАЗНОЕ БЕТОН"},{i:113,c:"РЕШЁТКИ"},{i:114,c:"РЕШЁТКИ"},{i:115,c:"ДОРОГА"},
+      {i:116,c:"ПРИРОДА ДОРОГА"},{i:117,c:"ПРИРОДА ДЕРЕВО"},{i:118,c:"КИРПИЧ"},{i:119,c:"ДОРОГА"},{i:120,c:"РЕШЁТКИ"},
+      {i:121,c:"РАЗНОЕ"},{i:122,c:"БЕТОН"},{i:123,c:"ПРИРОДА ДОРОГА"},{i:124,c:"КИРПИЧ"},{i:125,c:"КИРПИЧ БЕТОН"},
+      {i:126,c:"ЛЮКИ И СТОКИ"},{i:127,c:"БЕТОН"},{i:128,c:"УЛИЧНОЕ ИСКУССТВО БЕТОН"},{i:129,c:"КИРПИЧ"},{i:130,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:131,c:"БФФИНГ"},{i:132,c:"КАМЕНЬ"},{i:133,c:"КАМЕНЬ БЕТОН"},{i:134,c:"РЕШЁТКИ"},{i:135,c:"БАФФИНГ"},
+      {i:136,c:"УЛИЧНОЕ ИСКУССТВО МЕТАЛЛ"},{i:137,c:"УЛИЧНОЕ ИСКУССТВО МЕТАЛЛ"},{i:138,c:"БЕТОН"},{i:139,c:"БЕТОН РАЗНОЕ"},{i:140,c:"ПРИРОДА"},
+      {i:141,c:"СТЕНА"},{i:142,c:"ЧИСЛА"},{i:143,c:"ЧИСЛА"},{i:144,c:"ЧИСЛА"},{i:145,c:"ДЕРЕВО"},
+      {i:146,c:"РЕШЁТКИ"},{i:147,c:"ДЕРЕВО"},{i:148,c:"РЕШЁТКИ"},{i:149,c:"СТЕНА БАФФИНГ ТРЕЩИНЫ"},{i:150,c:"МЕТАЛЛ ТРЕЩИНЫ"},
+      {i:151,c:"КИРПИЧ"},{i:152,c:"БЕТОН"},{i:153,c:"ДЕРЕВО"},{i:154,c:"МОЗАИКА"},{i:155,c:"ЧИСЛА ЗНАКИ"},
+      {i:156,c:"РЕШЁТКИ"},{i:157,c:"КАМЕНЬ"},{i:158,c:"КИРПИЧ"},{i:159,c:"КИРПИЧ"},{i:160,c:"КИРПИЧ"},
+      {i:161,c:"БЕТОН"},{i:162,c:"КИРПИЧ"},{i:163,c:"ДЕРЕВО"},{i:164,c:"ЛЮКИ И СТОКИ | БЕТОН"},{i:165,c:"КИРПИЧ"},
+      {i:166,c:"ЛЮКИ И СТОКИ | БЕТОН"},{i:167,c:"КИРПИЧ"},{i:168,c:"УЛИЧНОЕ ИСКУССТВО"},{i:169,c:"КИРПИЧ"},{i:170,c:"РАЗНОЕ СТЕНА"},
+      {i:171,c:"ЗНАКИ"},{i:172,c:"УЛИЧНОЕ ИСКУССТВО"},{i:173,c:"РЕШЁТКА"},{i:174,c:"МЕТАЛЛ КРЫША"},{i:175,c:"МОЗАИКА"},
+      {i:176,c:"ЛЮКИ И СТОКИ"},{i:177,c:"БЕТОН"},{i:178,c:"БЕТОН ТРЕЩИНЫ"},{i:179,c:"РАЗНОЕ БЕТОН"},{i:180,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:181,c:"ДОРОГА КИРПИЧ"},{i:182,c:"УЛИЧНОЕ ИСКУССТВО"},{i:183,c:"УЛИЧНОЕ ИСКУССТВО"},{i:184,c:"УЛИЧНОЕ ИСКУССТВО | ЧИСЛА"},{i:185,c:"КИРПИЧ"},
+      {i:186,c:"РЕШЁТКИ"},{i:187,c:"МОЗАИКА"},{i:188,c:"УЛИЧНОЕ ИСКУССТО"},{i:189,c:"МОЗАИКА"},{i:190,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:191,c:"УЛИЧНОЕ ИСКУССТВО"},{i:192,c:"УЛИЧНОЕ ИСКУССТВО"},{i:193,c:"КИРПИЧ | УЛИЧНОЕ ИСКУССТВО"},{i:194,c:"КИРПИЧ"},{i:195,c:"МОЗАИКА"},
+      {i:196,c:"МОЗАИКА"},{i:197,c:"ПЕСОК"},{i:198,c:"КАМЕНЬ"},{i:199,c:"БЕТОН"},{i:200,c:"ДЕРЕВО"},
+      {i:201,c:"КАМЕНЬ"},{i:202,c:"БЕТОН ТРЕЩИНЫ"},{i:203,c:"БЕТОН"},{i:204,c:"ДОРОГА | РАЗНОЕ"},{i:205,c:"РЕШЁТКА"},
+      {i:206,c:"ЛЮКИ И СТОКИ"},{i:207,c:"ДОРОГА | КИРПИЧ"},{i:208,c:"ДОРОГА | КИРПИЧ"},{i:209,c:"СТЕНА | ТРЕЩИНЫ"},{i:210,c:"УЛИЧНЫЕ ЗНАКИ"},
+      {i:211,c:"УЛИЧНОЕ ИСКУССТВО"},{i:212,c:"ЛЮКИ И СТОКИ"},{i:213,c:"МЕТАЛЛ"},{i:214,c:"УЛИЧНОЕ ИСКУССТВО"},{i:215,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:216,c:"УЛИЧНОЕ ИСКУССТВО"},{i:217,c:"ЛЮКИ И СТОКИ"},{i:218,c:"КИРПИЧ"},{i:219,c:"МОЗАИКА"},{i:220,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:221,c:"УЛИЧНОЕ ИСКУССТВО"},{i:222,c:"ПРИРОДА"},{i:223,c:"ПРИРОДА"},{i:224,c:"ЛЮКИ И СТОКИ"},{i:225,c:"КАМЕНЬ"},
+      {i:226,c:"МЕТАЛЛ"},{i:227,c:"МОЗАИКА"},{i:228,c:"ТРЕЩИНЫ"},{i:229,c:"УЛИЧНОЕ ИСКУССТВО"},{i:230,c:"СТЕКЛО"},
+      {i:231,c:"ПРИРОДА РЕШЁТКИ"},{i:232,c:"ЧИСЛА"},{i:233,c:"МОЗАИКА | УЛИЧНОЕ ИСКУССТВО"},{i:234,c:"МОЗАИКА | УЛИЧНОЕ ИСКУССТВО"},{i:235,c:"МОЗАИКА | УЛИЧНОЕ ИСКУССТВО"},
+      {i:236,c:"МОЗАИКА | УЛИЧНОЕ ИСКУССТВО"},{i:237,c:"МОЗАИКА | УЛИЧНОЕ ИСКУССТВО"},{i:238,c:"БЕТОН"},{i:239,c:"УЛИЧНОЕ ИСКУССТВО"},{i:240,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:241,c:"УЛИЧНОЕ ИСКУССТВО"},{i:242,c:"УЛИЧНОЕ ИСКУССТВО"},{i:243,c:"УЛИЧНОЕ ИСКУССТВО"},{i:244,c:"СТЕНА | ТРЕЩИНЫ"},{i:245,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:246,c:"УЛИЧНОЕ ИСКУССТВО"},{i:247,c:"ПРИРОДА | ДОРОГА"},{i:248,c:"ЛЮКИ И СТОКИ"},{i:249,c:"ПРИРОДА"},{i:250,c:"РЕШЁТКИ"},
+      {i:251,c:"БАФФИНГ"},{i:252,c:"КИРПИЧ"},{i:253,c:"БЕТОН"},{i:254,c:"РЕКЛАМА"},{i:255,c:"БАФФИНГ"},
+      {i:256,c:"МОЗАИКА"},{i:257,c:"БЕТОН"},{i:258,c:"БЕТОН | РЕКЛАМА"},{i:259,c:"БЕТОН"},{i:260,c:"БЕТОН"},
+      {i:261,c:"ЧИСЛА"},{i:262,c:"СТЕННА | КАМЕМНЬ"},{i:263,c:"БЕТОН"},{i:264,c:"БАФФИНГ"},{i:265,c:"ДЕРЕВО"},
+      {i:266,c:"СТЕНА | УЛИЧНОЕ ИСКУССТВО"},{i:267,c:"ДЕРЕВО"},{i:268,c:"ПРИРОДА"},{i:269,c:"СТЕНА | РЕКЛАМА"},{i:270,c:"РЕШЁТКА"},
+      {i:271,c:"РАЗНОЕ"},{i:272,c:"ДЕРЕВО"},{i:273,c:"КАМЕНЬ | МЕТАЛЛ"},{i:274,c:"РАЗНОЕ | БЕТОН"},{i:275,c:"БЕТОН | МЕТАЛЛ"},
+      {i:276,c:"ЛЮКИ И СТОКИ"},{i:277,c:"КИРПИЧ"},{i:278,c:"ЛЮКИ И СТОКИ"},{i:279,c:"БЕТОН"},{i:280,c:"КИРПИЧ | УЛИЧНОЕ ИСКУССТВО"},
+      {i:281,c:"ЧИСЛА"},{i:282,c:"КИРПИЧ"},{i:283,c:"УЛИЧЫНЕ ЗНАКИ | ДОРОГА"},{i:284,c:"РАЗНОЕ"},{i:285,c:"БЕТОН"},
+      {i:286,c:"УЛИЧНОЕ ИСКУССВТО"},{i:287,c:"ЧИСЛА"},{i:288,c:"КАМЕНЬ"},{i:289,c:"БЕТОН"},{i:290,c:"БАФФИНГ"},
+      {i:291,c:"БЕТОН | РЕКЛАМА"},{i:292,c:"КИРПИЧ | ПРИРОДА"},{i:293,c:"МЕТАЛЛ"},{i:294,c:"СТЕНА"},{i:295,c:"КИРПИЧ"},
+      {i:296,c:"МЕТАЛЛ"},{i:297,c:"ДОРОГА | ПРИРОДА"},{i:298,c:"ДЕРЕВО | ТРЕЩИНЫ"},{i:299,c:"РЕШЁТКА"},{i:300,c:"ЧИСЛА"},
+      {i:301,c:"УЛИЧНЫЕ ЗНАКИ"},{i:302,c:"ЧИСЛА"},{i:303,c:"БЕТОН"},{i:304,c:"БЕТОН"},{i:305,c:"БЕТОН"},
+      {i:306,c:"УЛИЧНОЕ ИСКУССТВО"},{i:307,c:"УЛИЧНОЕ ИСКУССТВО"},{i:308,c:"ЧИСЛА | УЛИЧНОЕ ИСКУССТВО"},{i:309,c:"БЕТОН"},{i:310,c:"ЛЮКИ И СТОКИ"},
+      {i:311,c:"ПРИРОДА ДЕРЕВО"},{i:312,c:"ЛЮКИ И СТОКИ"},{i:313,c:"КИРПИЧ"},{i:314,c:"РЕШЁТКИ"},{i:315,c:"РАЗНОЕ"},
+      {i:316,c:"РАЗНОЕ"},{i:317,c:"РАЗНОЕ"},{i:318,c:"КАМЕНЬ | БЕТОН"},{i:319,c:"РЕШЁТКИ"},{i:320,c:"КАМЕНЬ | БЕТОН"},
+      {i:321,c:"ЛЮКИ И СТОКИ"},{i:322,c:"ЛЮКИ И СТОКИ"},{i:323,c:"БЕТОН"},{i:324,c:"ПРИРОДА"},{i:325,c:"ПРИРОДА"},
+      {i:326,c:"РЕШЁТКИ"},{i:327,c:"МЕТАЛЛ"},{i:328,c:"КИРПИЧ"},{i:329,c:"СТЕКЛО"},{i:330,c:"КИРПИЧ"},
+      {i:331,c:"МЕТАЛЛ"},{i:332,c:"БЕТОН"},{i:333,c:"ДОРОГ"},{i:334,c:"ДОРОГА | ТРЕЩИНЫ"},{i:335,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:336,c:"УЛИЧНОЕ ИСКУССТВО"},{i:337,c:"УЛИЧНОЕ ИСКУССТВО"},{i:338,c:"ЧИСЛА | УЛИЧНОЕ ИСКУССТВО"},{i:339,c:"УЛИЧНОЕ ИСКУССТВО"},{i:340,c:"МОЗАИКА"},
+      {i:341,c:"БЕТОН | ПРИРОДА"},{i:342,c:"БЕТОН"},{i:343,c:"РАЗНОЕ | БЕТОН"},{i:344,c:"РАЗНОЕ | БЕТОН"},{i:345,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:346,c:"КАМЕНЬ"},{i:347,c:"УЛИЧНОЕ ИСКУССТВО | МЕТАЛЛ"},{i:348,c:"УЛИЧНОЕ ИСКУССТВО | МЕТАЛЛ"},{i:349,c:"ДЕРЕВО"},{i:350,c:"ДЕРЕВО"},
+      {i:351,c:"ДОРОГА"},{i:352,c:"ПРИРОДА"},{i:353,c:"КАМЕНЬ | ПРИРОДА"},{i:354,c:"РЕШЁТКИ"},{i:355,c:"РЕШЁТКИ"},
+      {i:356,c:"УЛИЧНЫЕ ЗНАКИ"},{i:357,c:"МЕТАЛЛ | ТРЕЩИНЫ"},{i:358,c:"РЕШЁТКИ"},{i:359,c:"РЕШЁТКИ"},{i:360,c:"РЕШЁТКИ"},
+      {i:361,c:"РЕШЁТКИ"},{i:362,c:"РЕШЁТКИ"},{i:363,c:"УЛИЧНЫЕ ЗНАКИ"},{i:364,c:"ЛЮКИ И СТОКИ"},{i:365,c:"ДЕРЕВО | РАЗНОЕ"},
+      {i:366,c:"КАМЕНЬ"},{i:367,c:"БЕТОН"},{i:368,c:"БЕТОН"},{i:369,c:"СТЕКЛО"},{i:370,c:"СТЕКЛО"},
+      {i:371,c:"ДЕРЕВО"},{i:372,c:"ДЕРЕВО | УЛИЧНОЕ ИСКУССТВО"},{i:373,c:"БЕТОН"},{i:374,c:"БЕТОН"},{i:375,c:"БЕТОН"},
+      {i:376,c:"РЕШЁТКИ"},{i:377,c:"УЛИЧНЫЕ ЗНАКИ"},{i:378,c:"МОЗАИКА | КАМЕНЬ"},{i:379,c:"МОЗАИКА | КАМЕНЬ"},{i:380,c:"КАМЕНЬ"},
+      {i:381,c:"МЕТАЛЛ | ТРЕЩИНЫ"},{i:382,c:"МЕТАЛЛ | ТРЕЩИНЫ"},{i:383,c:"ЛЮКИ И СТОКИ"},{i:384,c:"КИРПИЧ"},{i:385,c:"РЕШЁТКИ"},
+      {i:386,c:"УЛИЧНОЕ ИСКУССТВО"},{i:387,c:"МОЗАИКА"},{i:388,c:"УЛИЧНОЕ ИСКУССТВО"},{i:389,c:"УЛИЧНОЕ ИСКУССТВО"},{i:390,c:"РАЗНОЕ"},
+      {i:391,c:"РЕКЛАМА"},{i:392,c:"МЕТАЛЛ"},{i:393,c:"МЕТАЛЛ"},{i:394,c:"РЕШЁТКИ"},{i:395,c:"РАЗНОЕ | БЕТОН"},
+      {i:396,c:"РЕШЁТКИ"},{i:397,c:"МОЗАИКА"},{i:398,c:"УЛИЧНЫЕ ЗНАКИ"},{i:399,c:"РЕШЁТКИ"},{i:400,c:"КИРПИЧ"},
+      {i:401,c:"БЕТОН | ДОРОГА"},{i:402,c:"РАЗНОЕ | МЕТАЛЛ"},{i:403,c:"КАМЕНЬ"},{i:404,c:"КАМЕНЬ"},{i:405,c:"РЕШЁТКИ"},
+      {i:406,c:"ЛЮКИ И СТОКИ"},{i:407,c:"РЕШЁТКИ"},{i:408,c:"РЕШЁТКИ"},{i:409,c:"МЕТАЛЛ"},{i:410,c:"РЕКЛАМА"},
+      {i:411,c:"ЛЮКИ И СТОКИ"},{i:412,c:"ЛЮКИ И СТОКИ"},{i:413,c:"РЕШЁТКИ"},{i:414,c:"КИРПИЧ"},{i:415,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:416,c:"МОЗАИКА"},{i:417,c:"МОЗАИКА"},{i:418,c:"УЛИЧНОЕ ИСКУССТВО"},{i:419,c:"МОЗАИКА"},{i:420,c:"МОЗАИКА"},
+      {i:421,c:"МОЗАИКА"},{i:422,c:"УЛИЧНОЕ ИСКУССТВО"},{i:423,c:"УЛИЧНОЕ ИСКУССТВО"},{i:424,c:"УЛИЧНОЕ ИСКУССТВО"},{i:425,c:"МОЗАИКА"},
+      {i:426,c:"МОЗАИКА"},{i:427,c:"МОЗАИКА"},{i:428,c:"ДОРОГА | МЕТАЛЛ"},{i:429,c:"ДЕРЕВО"},{i:430,c:"РЕШЁТКИ"},
+      {i:431,c:"РЕШЁТКИ"},{i:432,c:"РАЗНОЕ | МЕТАЛЛ"},{i:433,c:"РАЗНОЕ | ДЕРЕВО | БЕТОН"},{i:434,c:"РАЗНОЕ | ДЕРЕВО | БЕТОН"},{i:435,c:"РЕШЁТКИ"},
+      {i:436,c:"РАЗНОЕ"},{i:437,c:"УЛИЧНОЕ ИСКУССТВО"},{i:438,c:"МОЗАИКА"},{i:439,c:"УЛИЧНОЕ ИСКУССТВО"},{i:440,c:"МОЗАИКА"},
+      {i:441,c:"МОЗАИКА"},{i:442,c:"УЛИЧНОЕ ИСКУССТВО"},{i:443,c:"УЛИЧНОЕ ИСКУССТВО"},{i:444,c:"РЕШЁТКИ"},{i:445,c:"РЕШЁТКИ"},
+      {i:446,c:"БЕТОН"},{i:447,c:"РЕШЁТКИ"},{i:448,c:"ПРИРОДА"},{i:449,c:"РЕШЁТКИ"},{i:450,c:"РЕШЁТКИ"},
+      {i:451,c:"ЧИСЛА"},{i:452,c:"БЕТОН | ДЕРЕВО"},{i:453,c:"КИРПИЧ"},{i:454,c:"КИРПИЧ"},{i:455,c:"БЕТОН"},
+      {i:456,c:"МЕТАЛЛ"},{i:457,c:"СТЕНА | ТРЕЩИНЫ"},{i:458,c:"СТЕНА | ТРЕЩИНЫ"},{i:459,c:"ДОРОГА"},{i:460,c:"МЕТАЛЛ"},
+      {i:461,c:"ДЕРЕВО"},{i:462,c:"УЛИЧНЫЕ ЗНАКИ"},{i:463,c:"МЕТАЛЛ"},{i:464,c:"РАЗНОЕ | БЕТОН"},{i:465,c:"РАЗНОЕ | БЕТОН"},
+      {i:466,c:"РАЗНОЕ"},{i:467,c:"МЕТАЛЛ | ТРЕЩИНЫ"},{i:468,c:"ДЕРЕВО"},{i:469,c:"ДОРОГА"},{i:470,c:"МЕТАЛЛ | ТРЕЩИНЫ"},
+      {i:471,c:"ЧИСЛА"},{i:472,c:"МЕТАЛЛ | ТРЕЩИНЫ"},{i:473,c:"РАЗНОЕ"},{i:474,c:"РАЗНОЕ"},{i:475,c:"МЕТАЛЛ"},
+      {i:476,c:"БЕТОН"},{i:477,c:"БЕТОН"},{i:478,c:"БЕТОН"},{i:479,c:"КАМЕНЬ"},{i:480,c:"БЕТОН | ДОРОГА"},
+      {i:481,c:"ПРИРОДА"},{i:482,c:"ЛЮКИ И СТОКИ"},{i:483,c:"ЧИСЛА"},{i:484,c:"ЧИСЛА"},{i:485,c:"ЧИСЛА"},
+      {i:486,c:"РАЗНОЕ | БЕТОН"},{i:487,c:"ТРЕЩИНЫ"},{i:488,c:"БЕТОН"},{i:489,c:"КАМНИ"},{i:490,c:"БЕТОН"},
+      {i:491,c:"ЛЮКИ И СТОКИ"},{i:492,c:"РЕШЁТКИ"},{i:493,c:"РЕШЁТКИ"},{i:494,c:"РЕШЁТКИ"},{i:495,c:"РЕШЁТКИ"},
+      {i:496,c:"РЕШЁТКИ"},{i:497,c:"РАЗНОЕ | МЕТАЛЛ"},{i:498,c:"РЕШЁТКИ"},{i:499,c:"РЕШЁТКИ"},{i:500,c:"РЕШЁТКИ"},
+      {i:501,c:"КАМЕНЬ | ПРИРОДА"},{i:502,c:"КАМЕНЬ | ПРИРОДА"},{i:503,c:"КАМЕНЬ | ПРИРОДА"},{i:504,c:"ПРИРОДА"},{i:505,c:"ПРИРОДА"},
+      {i:506,c:"КАМЕНЬ | ПРИРОДА"},{i:507,c:"ПРИРОДА"},{i:508,c:"ПРИРОДА"},
+      {i:509,c:"УЛИЧНОЕ ИСКУССТВО"},{i:510,c:"УЛИЧНОЕ ИСКУССТВО"},{i:511,c:"УЛИЧНОЕ ИСКУССТВО"},{i:512,c:"УЛИЧНОЕ ИСКУССТВО"},{i:513,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:514,c:"ДОРОГА"},{i:515,c:"ДОРОГА"},{i:516,c:"УЛИЧНОЕ ИСКУССТВО"},{i:517,c:"УЛИЧНОЕ ИСКУССТВО"},{i:518,c:"УЛИЧНОЕ ИСКУССТВО"},
+      {i:519,c:"УЛИЧНОЕ ИСКУССТВО"},{i:520,c:"УЛИЧНОЕ ИСКУССТВО | МЕТАЛЛ"},{i:521,c:"УЛИЧНОЕ ИСКУССТВО | МЕТАЛЛ"},{i:522,c:"МЕТАЛЛ"},{i:523,c:"УЛИЧНОЕ ИСКУССТВО"}
+    ];
 
-#canvas-container { position: absolute; inset: 0; }
-canvas { display: block; }
-
-/* ===== ATMOSPHERE ===== */
-#overlay {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.92) 100%);
-    pointer-events: none;
-    z-index: 2;
-}
-
-/* ===== HEADER ===== */
-#header {
-    position: absolute;
-    top: 32px; left: 36px;
-    z-index: 20;
-    color: #fff;
-}
-#project-title {
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: .02em;
-    text-transform: uppercase;
-    opacity: .95;
-    margin-bottom: 6px;
-    line-height: 1.2;
-}
-#project-author {
-    font-size: 16px;
-    opacity: .5;
-    letter-spacing: .01em;
-    font-weight: 400;
-}
-
-/* ===== INFO PANEL ===== */
-#info-panel {
-    position: absolute;
-    top: 32px; right: 36px;
-    width: 640px;
-    padding: 32px 36px;
-    background: rgba(12,12,16,.86);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,.07);
-    border-radius: 20px;
-    color: #fff;
-    z-index: 25;
-    opacity: 0;
-    transform: translateY(-16px);
-    transition: all .4s cubic-bezier(.16,1,.3,1);
-    pointer-events: none;
-}
-#info-panel.visible {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-#info-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid rgba(255,255,255,.05);
-}
-#info-name { 
-    font-size: 32px; 
-    font-weight: 600; 
-    letter-spacing: -.01em; 
-    line-height: 1.1;
-}
-#info-close {
-    font-size: 28px; opacity: .5; cursor: pointer;
-    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; transition: opacity .2s, background .2s;
-}
-#info-close:hover { opacity: 1; background: rgba(255,255,255,.08); }
-#info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px 28px;
-    margin-bottom: 20px;
-}
-.info-row { display: flex; flex-direction: column; gap: 6px; }
-.label { 
-    font-size: 16px; 
-    opacity: .45; 
-    letter-spacing: .02em; 
-    text-transform: uppercase;
-    font-weight: 500;
-}
-.value { 
-    font-size: 20px; 
-    font-weight: 500; 
-    letter-spacing: 0;
-    line-height: 1.3;
-}
-#info-hint {
-    font-size: 16px; opacity: .35; text-align: right; letter-spacing: 0; margin-top: 8px;
-    font-weight: 400;
-}
-
-/* ===== HINTS ===== */
-#controls-hint {
-    position: absolute;
-    bottom: 28px; right: 36px;
-    color: rgba(255,255,255,.4);
-    font-size: 16px; letter-spacing: .02em;
-    z-index: 15; pointer-events: none;
-    font-weight: 400;
-}
-
-/* ===== LOADER ===== */
-#loader {
-    position: absolute; inset: 0;
-    background: #000;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 999;
-    transition: opacity .5s ease, visibility .5s ease;
-}
-#loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.loader-text { 
-    color: rgba(255,255,255,.5); 
-    font-size: 16px; 
-    letter-spacing: .15em; 
-    text-transform: uppercase;
-    font-weight: 500;
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1100px) {
-    #info-panel { width: 480px; padding: 28px 32px; }
-    #info-grid { grid-template-columns: 1fr; gap: 16px; }
-    #info-name { font-size: 28px; }
-    .value { font-size: 18px; }
-    .label { font-size: 16px; }
-}
-@media (max-width: 700px) {
-    #header { top: 24px; left: 24px; }
-    #project-title { font-size: 18px; }
-    #project-author { font-size: 16px; }
-    #info-panel { 
-        top: 24px; right: 24px; 
-        width: calc(100vw - 48px); 
-        max-width: 420px; 
-        padding: 26px 28px; 
-    }
-    #info-name { font-size: 26px; }
-    .value { font-size: 18px; }
-    #controls-hint { bottom: 24px; right: 24px; font-size: 16px; }
-    #info-hint { font-size: 16px; }
-}
-</style>
-
-<!-- THREE.JS & CONTROLS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
-<script>
-/* ===================================================== */
-/*                  ⚙️ НАСТРОЙКИ (не меняйте без нужды)   */
-/* ===================================================== */
-const CONFIG = {
-    textureSize: 2.8,           // Размер текстур
-    minZoom: 0.1,               // 🔍 Максимальное приближение (чем меньше, тем ближе)
-    maxZoom: 100,               // 🔍 Максимальное отдаление
-    cameraStartZ: 22,           // Стартовая позиция камеры
-    rotationSpeed: 0.0004,      // Скорость авто-вращения
-    focusScale: 4,            // Увеличение при клике
-    dimOpacity: 0.02,           // Прозрачность неактивных текстур
-    spread: {
-        horizontal: 32,         // Разброс влево-вправо
-        vertical: 20,           // Разброс вверх-вниз
-        depth: 50,              // Разброс в глубину/ближе
-        eyeLevelBias: 0.65      // Доля текстур на уровне глаз (0.0 - 1.0)
-    }
-};
-
-/* ===================================================== */
-/*                  🖼️ ВАШИ 48 ТЕКСТУРЫ                   */
-/* ===================================================== */
-/* ИНСТРУКЦИЯ: Меняйте только текст в кавычках после: */
-/* district: "ваш район", material: "ваш материал", whatIsIt: "ваше описание" */
-const TEXTURES = [
-    { id: 1,  url: "https://static.tildacdn.com/tild3530-3364-4432-b339-656130626164/1.png",       district: "Первомайский", material: "Металл и краска", whatIsIt: "Граффити на вышке" },
-    { id: 2,  url: "https://static.tildacdn.com/tild6635-3730-4536-a164-316134346233/2.png",       district: "Первомайский", material: "Металл", whatIsIt: "Решётка на вышке" },
-    { id: 3,  url: "https://static.tildacdn.com/tild6231-3630-4636-a530-663234353735/3.png",       district: "Первомайский", material: "Металл", whatIsIt: "Граффити на вышке" },
-    { id: 4,  url: "https://static.tildacdn.com/tild3761-6466-4631-a265-656336323361/0_4.png",     district: "Первомайский", material: "Металл", whatIsIt: "Граффити на вышке" },
-    { id: 5,  url: "https://static.tildacdn.com/tild3035-6630-4439-b365-643732313864/0_5.png",     district: "Советский", material: "Кирпич", whatIsIt: "Стена гаража" },
-    { id: 6,  url: "https://static.tildacdn.com/tild3131-3033-4436-b230-663638626366/0_6.png",     district: "Фрунзенский", material: "Металл", whatIsIt: "Ограда на балконе АртЭтажа" },
-    { id: 7,  url: "https://static.tildacdn.com/tild3763-6130-4437-b539-616637323265/0_7.png",     district: "Фрунзенский", material: "Металл", whatIsIt: "Ограда внутри АртЭтажа" },
-    { id: 8,  url: "https://static.tildacdn.com/tild3935-3832-4236-b038-373535393937/0_8.png",     district: "Фрунзенский", material: "Краска", whatIsIt: "Стена внутри дома" },
-    { id: 9,  url: "https://static.tildacdn.com/tild3630-6363-4133-b537-316334656661/0_9.png",     district: "Фрунзенский", material: "Бетон", whatIsIt: "Стена внутри дома" },
-    { id: 10, url: "https://static.tildacdn.com/tild3565-3964-4665-b731-353261346262/0_10.png",    district: "Фрунзенский", material: "Бетон и краска", whatIsIt: "Стена подъезда" },
-    { id: 11, url: "https://static.tildacdn.com/tild3338-3330-4135-a138-633633306462/0_11.png",    district: "Фрунзенский", material: "Бетон и краска", whatIsIt: "Ступень с жёлтой линией" },
-    { id: 12, url: "https://static.tildacdn.com/tild3837-6664-4538-b631-373930343833/0_12.png",    district: "Фрунзенский", material: "Дерево", whatIsIt: "Деревянная скамейка" },
-    { id: 13, url: "https://static.tildacdn.com/tild6433-6164-4033-b834-313634646162/0_13.png",    district: "Фрунзенский", material: "Металл", whatIsIt: "Решётка подъезда" },
-    { id: 14, url: "https://static.tildacdn.com/tild3636-3264-4834-b739-313362306463/0_14.png",    district: "Фрунзенский", material: "Керамика", whatIsIt: "Пол внутри АртЭтажей" },
-    { id: 15, url: "https://static.tildacdn.com/tild3965-3563-4766-b032-373033663161/0_15.png",    district: "Русский остров", material: "Природный", whatIsIt: "Скала" },
-    { id: 16, url: "https://static.tildacdn.com/tild3666-6364-4432-b565-626335373539/0_16.png",    district: "Русский остров", material: "Искуственный", whatIsIt: "Запутання сетка, найденная на берегу моря" },
-    { id: 17, url: "https://static.tildacdn.com/tild6436-3638-4531-b435-623836343438/0_17.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осення листва" },
-    { id: 18, url: "https://static.tildacdn.com/tild3233-3031-4931-a265-383663653430/0_18.png",    district: "Русский остров", material: "Искуственный", whatIsIt: "Мой блокнот на пляже" },
-    { id: 19, url: "https://static.tildacdn.com/tild6334-6630-4331-a361-636565393938/0_19.png",    district: "Русский остров", material: "Природный", whatIsIt: "Кора дерева на берегу моря" },
-    { id: 20, url: "https://static.tildacdn.com/tild3434-6237-4138-a262-636636343339/0_20.png",    district: "Русский остров", material: "Природный", whatIsIt: "Кора дерева на берегу моря" },
-    { id: 21, url: "https://static.tildacdn.com/tild3362-6435-4566-b466-386334306432/0_21.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осенняя трава" },
-    { id: 22, url: "https://static.tildacdn.com/tild6566-3030-4964-b066-396531656637/0_22.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осенняя трава" },
-    { id: 23, url: "https://static.tildacdn.com/tild3135-6432-4832-b430-373764653430/0_23.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осенняя трава" },
-    { id: 24, url: "https://static.tildacdn.com/tild3533-3863-4162-b231-616237613832/0_24.png",    district: "Русский остров", material: "Природный", whatIsIt: "Мёртвая морская звезда" },
-    { id: 25, url: "https://static.tildacdn.com/tild6134-3036-4166-b533-343039383930/0_25.png",    district: "Русский остров", material: "Природный", whatIsIt: "Скала" },
-    { id: 26, url: "https://static.tildacdn.com/tild6366-6665-4331-a632-646165303032/0_26.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшее осеннее растение на скале" },
-    { id: 27, url: "https://static.tildacdn.com/tild6264-3939-4330-a361-343533313766/0_27.png",    district: "Русский остров", material: "Искуственный", whatIsIt: "Пенопласт выбрашенный морем" },
-    { id: 28, url: "https://static.tildacdn.com/tild6132-6231-4463-b931-633033663362/0_28.png",    district: "Русский остров", material: "Искуственный", whatIsIt: "Пенопласт выбрашенный морем" },
-    { id: 29, url: "https://static.tildacdn.com/tild3332-3466-4562-b231-336263666466/0_29.png",    district: "Русский остров", material: "Природный", whatIsIt: "Галька на пляже за ДВФУ" },
-    { id: 30, url: "https://static.tildacdn.com/tild6535-6136-4462-b330-393536373738/0_30.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осенняя трава" },
-    { id: 31, url: "https://static.tildacdn.com/tild6662-3039-4063-b431-633062623636/0_31.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 32, url: "https://static.tildacdn.com/tild6330-3566-4338-a437-323266303864/0_32.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 33, url: "https://static.tildacdn.com/tild3433-6465-4361-b336-346539306466/0_33.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 34, url: "https://static.tildacdn.com/tild6138-3261-4139-a165-323762643066/0_34.png",    district: "Советский", material: "Бетон и бумага", whatIsIt: "Бетонный столб с оборванным объявлением" },
-    { id: 35, url: "https://static.tildacdn.com/tild6165-3236-4637-b534-663163346239/0_35.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 36, url: "https://static.tildacdn.com/tild6264-3235-4739-a165-383436623233/0_36.png",    district: "Советский", material: "Бетон и бумага", whatIsIt: "Бетонный столб с оборванным объявлением" },
-    { id: 37, url: "https://static.tildacdn.com/tild3133-3334-4435-a133-376431653561/0_37.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 38, url: "https://static.tildacdn.com/tild3362-3066-4764-a434-353131393064/0_38.png",    district: "Первомайский", material: "Гудрон", whatIsIt: "Гудрон на бетонной крыше" },
-    { id: 39, url: "https://static.tildacdn.com/tild6463-3432-4664-b063-386639636232/0_39.png",    district: "Советский", material: "Асфальт", whatIsIt: "Трещины на асфальте" },
-    { id: 40, url: "https://static.tildacdn.com/tild6338-6330-4965-b962-623465363135/0_40.png",    district: "Первомайский", material: "Гудрон", whatIsIt: "Гудрон на бетонной крыше" },
-    { id: 41, url: "https://static.tildacdn.com/tild3035-3531-4534-a437-363139623835/0_41.png",    district: "Советский", material: "Асфальт", whatIsIt: "Дыра на асфальте" },
-    { id: 42, url: "https://static.tildacdn.com/tild3836-3634-4130-b232-653363326631/0_42.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 43, url: "https://static.tildacdn.com/tild3234-3036-4336-a638-343438353734/0_43.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Текстура обшивки сферы ПВО" },
-    { id: 44, url: "https://static.tildacdn.com/tild6264-6263-4339-b866-313431656230/0_44.png",    district: "Советский", material: "Керамика", whatIsIt: "Керамическая плитка" },
-    { id: 45, url: "https://static.tildacdn.com/tild3936-3831-4061-b761-356165633437/0_45.png",    district: "Первомайский", material: "Бетон", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 46, url: "https://static.tildacdn.com/tild3836-3364-4663-a630-376164336137/0_46.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 47, url: "https://static.tildacdn.com/tild3663-3263-4539-a462-613263633135/0_47.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
-    { id: 48, url: "https://static.tildacdn.com/tild6431-6663-4062-a534-383139623338/48.png",      district: "Советский", material: "Белый кирпич", whatIsIt: "Стена гаража" }
-];
-
-/* ===================================================== */
-/*                  ⚙️ THREE.JS ИНИЦИАЛИЗАЦИЯ            */
-/* ===================================================== */
-// Ссылки на элементы
-const app = document.getElementById('app');
-const container = document.getElementById('canvas-container');
-const infoPanel = document.getElementById('info-panel');
-const infoCloseBtn = document.getElementById('info-close');
-const loader = document.getElementById('loader');
-const valName = document.getElementById('val-name');
-const valDistrict = document.getElementById('val-district');
-const valMaterial = document.getElementById('val-material');
-const valWhat = document.getElementById('val-what');
-const valId = document.getElementById('val-id');
-
-// Сцена, Камера, Рендерер
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
-scene.fog = new THREE.Fog(0x000000, 30, 110);
-
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 400);
-camera.position.set(0, 0, CONFIG.cameraStartZ);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
-container.appendChild(renderer.domElement);
-
-// Управление камерой
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.enablePan = false;
-controls.minDistance = CONFIG.minZoom;
-controls.maxDistance = CONFIG.maxZoom;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 0.35;
-
-// Свет
-scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-dirLight.position.set(5, 8, 5);
-scene.add(dirLight);
-
-// Группа для текстур
-const group = new THREE.Group();
-scene.add(group);
-
-// Массивы и загрузчик
-const meshes = [];
-const textureLoader = new THREE.TextureLoader();
-let loadedCount = 0;
-let isLoaderHidden = false;
-
-/* ===================================================== */
-/*                  🎲 ГЕНЕРАЦИЯ ПОЗИЦИЙ                 */
-/* ===================================================== */
-function getImmersivePosition() {
-    const s = CONFIG.spread;
-    const isEyeLevel = Math.random() < s.eyeLevelBias;
-    let x, y, z;
-
-    if (isEyeLevel) {
-        x = (Math.random() * 2 - 1) * s.horizontal;
-        y = (Math.random() * 2 - 1) * (s.vertical * 0.35);
-        z = (Math.random() * 2 - 1) * s.depth;
-    } else {
-        const isAbove = Math.random() > 0.5;
-        x = (Math.random() * 2 - 1) * (s.horizontal * 0.7);
-        y = (isAbove ? 1 : -1) * (s.vertical * 0.5 + Math.random() * s.vertical * 0.5);
-        z = (Math.random() * 2 - 1) * (s.depth * 0.8);
+    // ================= PARSER =================
+    function parseCategory(raw){
+      if(!raw) return {raw:"РАЗНОЕ",primary:"РАЗНОЕ",all:["РАЗНОЕ"]};
+      let s=raw.trim();
+      for(let[t,f] of Object.entries(CONFIG.FIXES)) s=s.replace(new RegExp(t,'gi'),f);
+      s=s.replace(/[\|\s]+/g,', ').replace(/,\s*,/g,',').trim();
+      let parts=s.split(',').map(p=>p.trim()).filter(Boolean);
+      if(!parts.length) return {raw:s,primary:"РАЗНОЕ",all:["РАЗНОЕ"]};
+      let primary=parts[0];
+      if(!CONFIG.CATS.includes(primary)){
+        let found=CONFIG.CATS.find(c=>primary.includes(c)||c.includes(primary));
+        primary=found||"РАЗНОЕ";
+      }
+      let all=parts.map(p=>CONFIG.CATS.find(c=>p.includes(c)||c.includes(p))).filter(Boolean);
+      return {raw:s, primary, all:[...new Set(all)]};
     }
 
-    // Минимальное расстояние от центра, чтобы не перекрывать камеру
-    const dist = Math.sqrt(x*x + y*y + z*z);
-    if (dist < 6) {
-        const scale = 6 / dist;
-        x *= scale; y *= scale; z *= scale;
+    // ================= APP =================
+    const els={loader:document.getElementById('loader'),bar:document.getElementById('progress-bar'),txt:document.getElementById('progress-text'),panel:document.getElementById('info-panel'),close:document.getElementById('info-close'),vCat:document.getElementById('val-category'),vMat:document.getElementById('val-material'),vDist:document.getElementById('val-district'),vWhat:document.getElementById('val-what'),vId:document.getElementById('val-id'),dlBtn:document.getElementById('download-btn'),toggle:document.getElementById('mode-toggle'),mIcon:document.getElementById('mode-icon'),mLabel:document.getElementById('mode-label'),sorts:document.getElementById('cluster-sort-controls'),sBtns:document.querySelectorAll('.sort-btn'),hint:document.getElementById('mode-hint')};
+    const state={nodes:[],links:[],cluster:false,sort:'district',sel:null};
+    let scene,camera,renderer,controls,group,manager,loader,loaded=0,total=523;
+
+    function init(){
+      // Принудительно чёрный фон на случай CSS-конфликтов
+      document.body.style.background = '#070707';
+      
+      scene=new THREE.Scene(); 
+      scene.background=new THREE.Color(0x070707); 
+      scene.fog=new THREE.Fog(0x070707,35,140);
+      
+      camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,1000); 
+      camera.position.set(0,0,60);
+      
+      renderer=new THREE.WebGLRenderer({antialias:true, alpha:false}); 
+      renderer.setPixelRatio(Math.min(devicePixelRatio,2)); 
+      renderer.setSize(innerWidth,innerHeight);
+      renderer.setClearColor(0x070707, 1);
+      document.getElementById('canvas-container').appendChild(renderer.domElement);
+      
+      controls=new THREE.OrbitControls(camera,renderer.domElement); 
+      controls.enableDamping=true; 
+      controls.autoRotate=true; 
+      controls.autoRotateSpeed=0.18; 
+      controls.minDistance=1; 
+      controls.maxDistance=150;
+      
+      group=new THREE.Group(); scene.add(group);
+      scene.add(new THREE.AmbientLight(0xffffff,2.2));
+      const dirLight=new THREE.DirectionalLight(0xffffff,1.4); 
+      dirLight.position.set(10,20,10); 
+      scene.add(dirLight);
+      
+      addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+      
+      loadTextures();
+      setupUI();
+      animate();
     }
 
-    return { x, y, z };
-}
-
-/* ===================================================== */
-/*                  🖼️ СОЗДАНИЕ ОБЪЕКТОВ                */
-/* ===================================================== */
-function createMesh(data) {
-    const geometry = new THREE.PlaneGeometry(CONFIG.textureSize, CONFIG.textureSize);
-    
-    textureLoader.load(
-        data.url,
-        (texture) => {
-            // Настройка текстуры
-            texture.colorSpace = THREE.SRGBColorSpace;
-            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-            // Материал
-            const material = new THREE.MeshBasicMaterial({
-                map: texture,
-                transparent: true,
-                opacity: 1,
-                side: THREE.DoubleSide
-            });
-
-            // Сетка
-            const mesh = new THREE.Mesh(geometry, material);
-            const pos = getImmersivePosition();
-            mesh.position.set(pos.x, pos.y, pos.z);
-            
-            // Всегда смотрит на камеру
-            mesh.lookAt(camera.position);
-            mesh.rotation.z = (Math.random() - 0.5) * 0.5;
-
-            // Данные
-            mesh.userData = {
-                name: data.name || `VDK_${String(data.id).padStart(2, '0')}`,
-                district: data.district || "—",
-                material: data.material || "—",
-                whatIsIt: data.whatIsIt || "—",
-                id: data.id
-            };
-
-            group.add(mesh);
-            meshes.push(mesh);
-
-            // Счётчик загрузки
-            loadedCount++;
-            if (loadedCount === TEXTURES.length && !isLoaderHidden) {
-                hideLoader();
-            }
-        },
-        undefined,
-        (err) => {
-            console.warn("Ошибка загрузки:", data.url);
-            loadedCount++;
-            if (loadedCount === TEXTURES.length && !isLoaderHidden) {
-                hideLoader();
-            }
-        }
-    );
-}
-
-// Запуск создания всех 48 текстур
-TEXTURES.forEach(createMesh);
-
-// Гарантированное скрытие лоадера (если сеть тормозит)
-function hideLoader() {
-    if (isLoaderHidden) return;
-    isLoaderHidden = true;
-    loader.classList.add('hidden');
-}
-setTimeout(hideLoader, 3000); // Через 3 секунды точно уберётся
-
-/* ===================================================== */
-/*                  🖱️ ИНТЕРАКЦИЯ                        */
-/* ===================================================== */
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-let hoveredMesh = null;
-let selectedMesh = null;
-
-function updateMouse(event) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-}
-
-function checkHover() {
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(meshes);
-
-    // Сброс ховера для невыбранных
-    meshes.forEach(m => {
-        if (m !== selectedMesh) {
-            m.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-            m.material.opacity = THREE.MathUtils.lerp(m.material.opacity, 1, 0.1);
-        }
-    });
-
-    if (intersects.length > 0) {
-        hoveredMesh = intersects[0].object;
-        if (hoveredMesh !== selectedMesh) {
-            hoveredMesh.scale.lerp(new THREE.Vector3(1.22, 1.22, 1.22), 0.15);
-            app.style.cursor = 'pointer';
-        }
-    } else {
-        hoveredMesh = null;
-        app.style.cursor = 'grab';
-    }
-}
-
-function showInfoPanel(data) {
-    valName.textContent = data.name;
-    valDistrict.textContent = data.district;
-    valMaterial.textContent = data.material;
-    valWhat.textContent = data.whatIsIt;
-    valId.textContent = `#${String(data.id).padStart(2, '0')}`;
-    infoPanel.classList.add('visible');
-}
-
-function hideInfoPanel() {
-    infoPanel.classList.remove('visible');
-}
-
-function selectMesh(mesh) {
-    if (selectedMesh === mesh) {
-        // Отмена выбора
-        selectedMesh.scale.set(1, 1, 1);
-        selectedMesh.material.opacity = 1;
-        selectedMesh = null;
-        hideInfoPanel();
-        controls.autoRotate = true;
-        return;
-    }
-    // Сброс предыдущего
-    if (selectedMesh) {
-        selectedMesh.scale.set(1, 1, 1);
-        selectedMesh.material.opacity = 1;
-    }
-    // Выбор нового
-    selectedMesh = mesh;
-    selectedMesh.scale.set(CONFIG.focusScale, CONFIG.focusScale, CONFIG.focusScale);
-    selectedMesh.material.opacity = 1;
-    
-    // Затемнение остальных
-    meshes.forEach(m => {
-        if (m !== selectedMesh) {
-            m.material.opacity = CONFIG.dimOpacity;
-        }
-    });
-    
-    showInfoPanel(mesh.userData);
-    controls.autoRotate = false;
-}
-
-// События
-app.addEventListener('mousemove', (e) => {
-    updateMouse(e);
-    checkHover();
-});
-
-app.addEventListener('click', (e) => {
-    updateMouse(e);
-    checkHover();
-    if (hoveredMesh) {
-        selectMesh(hoveredMesh);
-    } else if (!selectedMesh) {
-        controls.autoRotate = true;
-    }
-});
-
-infoCloseBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (selectedMesh) {
-        selectedMesh.scale.set(1, 1, 1);
-        selectedMesh.material.opacity = 1;
-        selectedMesh = null;
-        hideInfoPanel();
-        controls.autoRotate = true;
-    }
-});
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && selectedMesh) {
-        selectedMesh.scale.set(1, 1, 1);
-        selectedMesh.material.opacity = 1;
-        selectedMesh = null;
-        hideInfoPanel();
-        controls.autoRotate = true;
-    }
-});
-
-app.addEventListener('touchstart', () => { controls.autoRotate = false; }, { passive: true });
-app.addEventListener('touchend', () => { setTimeout(() => controls.autoRotate = true, 2500); });
-
-/* ===================================================== */
-/*                  🔄 АНИМАЦИЯ                          */
-/* ===================================================== */
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    group.rotation.y += CONFIG.rotationSpeed;
-
-    // Лёгкое покачивание при наведении
-    if (hoveredMesh && hoveredMesh !== selectedMesh) {
-        hoveredMesh.rotation.z = Math.sin(Date.now() * 0.002) * 0.06;
+    function loadTextures(){
+      manager=new THREE.LoadingManager();
+      manager.onProgress=(url, loaded, total)=>{
+        const pct=Math.round((loaded/total)*100);
+        els.bar.style.width=`${pct}%`; els.txt.textContent=`${pct}% (${loaded}/${total})`;
+      };
+      manager.onLoad=()=>{
+        setTimeout(()=>els.loader.classList.add('hidden'),300);
+        console.log('✅ Все текстуры загружены');
+      };
+      manager.onError=(url)=>{ console.warn('❌ Ошибка загрузки:', url); };
+      
+      loader=new THREE.TextureLoader(manager);
+      
+      RAW_DATA.forEach(d=>{
+        const fmt=d.i===1?'png':'JPG';
+        const url=`https://raw.githubusercontent.com/chudarraya/vladivostok-textures/main/1%20(${d.i}).${fmt}`;
+        
+        // Загружаем через Image для получения пропорций
+        const img=new Image(); img.crossOrigin='anonymous'; img.src=url;
+        img.onload=()=>{
+          const aspect=img.width/img.height;
+          const tex=loader.load(url); // кэшируется менеджером
+          createNode(d, tex, aspect);
+        };
+        img.onerror=()=>{
+          // Fallback если картинка не грузится
+          const cv=document.createElement('canvas'); cv.width=cv.height=128;
+          const ctx=cv.getContext('2d'); ctx.fillStyle='#222'; ctx.fillRect(0,0,128,128);
+          ctx.fillStyle='#666'; ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText('ERR',64,70);
+          createNode(d, new THREE.CanvasTexture(cv), 1);
+        };
+      });
     }
 
-    // Все невыбранные текстуры смотрят на камеру
-    meshes.forEach(m => {
-        if (m !== selectedMesh) {
-            m.lookAt(camera.position);
-        }
-    });
+    function createNode(data,texture,aspect){
+      const p=parseCategory(data.c);
+      const geo=new THREE.PlaneGeometry(1,1);
+      const mat=new THREE.MeshBasicMaterial({map:texture,transparent:true,opacity:1,side:THREE.DoubleSide});
+      const mesh=new THREE.Mesh(geo,mat);
+      mesh.scale.set(aspect * CONFIG.TEX_SIZE, CONFIG.TEX_SIZE, 1);
+      
+      const chaos={x:(Math.random()-.5)*25,y:(Math.random()-.5)*12,z:(Math.random()-.5)*25};
+      mesh.position.set(chaos.x,chaos.y,chaos.z);
+      
+      const angCat=(CONFIG.CATS.indexOf(p.primary)/CONFIG.CATS.length)*Math.PI*2;
+      const catPos={x:Math.cos(angCat)*CONFIG.CAT_R+(Math.random()-.5)*CONFIG.CAT_SPREAD,y:(Math.random()-.5)*CONFIG.CAT_H,z:Math.sin(angCat)*CONFIG.CAT_R+(Math.random()-.5)*CONFIG.CAT_SPREAD};
+      const distC=CONFIG.DIST[data.dist]||{x:0,y:0,z:0};
+      const distPos={x:distC.x+(Math.random()-.5)*CONFIG.CLUSTER_R,y:distC.y+(Math.random()-.5)*CONFIG.CAT_H,z:distC.z+(Math.random()-.5)*CONFIG.CLUSTER_R};
 
-    renderer.render(scene, camera);
-}
+      const node={mesh,data,p,chaos,catPos,distPos,target:chaos,anim:false};
+      state.nodes.push(node); group.add(mesh);
+      loaded++;
+      if(loaded>=total) setTimeout(()=>els.loader.classList.add('hidden'),300);
+    }
 
-/* ===================================================== */
-/*                  📐 RESIZE                            */
-/* ===================================================== */
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
+    function animate(){
+      requestAnimationFrame(animate); controls.update();
+      state.nodes.forEach(n=>{
+        if(n.anim) n.mesh.position.lerp(n.target,0.06);
+        n.mesh.lookAt(camera.position);
+      });
+      drawLinks();
+      renderer.render(scene,camera);
+    }
 
-// Запуск
-animate();
-app.style.cursor = 'grab';
-</script>
+    function drawLinks(){
+      state.links.forEach(l=>{group.remove(l.line);l.line.geometry.dispose();l.line.material.dispose()});
+      state.links=[];
+      if(!state.cluster) return;
+      const key=state.sort==='district'?'p.primary':'data.dist';
+      const grps={};
+      state.nodes.forEach(n=>{const k=key==='p.primary'?n.p.primary:n.data.dist;if(!grps[k])grps[k]=[];grps[k].push(n)});
+      Object.values(grps).forEach(g=>{
+        if(g.length<2) return;
+        g.forEach(n=>{
+          const near=g.filter(x=>x!==n).sort((a,b)=>n.mesh.position.distanceTo(a.mesh.position)-n.mesh.position.distanceTo(b.mesh.position)).slice(0,2);
+          near.forEach(t=>{
+            const geo=new THREE.BufferGeometry().setFromPoints([n.mesh.position.clone(),t.mesh.position.clone()]);
+            const mat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.06});
+            const line=new THREE.Line(geo,mat); group.add(line); state.links.push({line,n,t});
+          });
+        });
+      });
+    }
+
+    function setupUI(){
+      els.toggle.addEventListener('click',()=>{
+        state.cluster=!state.cluster;
+        els.toggle.classList.toggle('active',state.cluster);
+        els.mIcon.textContent=state.cluster?'[▣]':'[ ]';
+        els.mLabel.textContent=state.cluster?'Архив':'Кластеры';
+        els.sorts.classList.toggle('hidden',!state.cluster);
+        els.sorts.classList.toggle('visible',state.cluster);
+        if(state.cluster) sortNodes(); else resetNodes();
+      });
+      els.sBtns.forEach(b=>b.addEventListener('click',()=>{
+        if(!state.cluster) return;
+        els.sBtns.forEach(x=>x.classList.remove('active')); b.classList.add('active');
+        state.sort=b.dataset.sort; sortNodes();
+      }));
+      els.close.addEventListener('click',()=>{els.panel.classList.remove('visible');els.dlBtn.style.display='none';state.sel=null;controls.autoRotate=true;state.nodes.forEach(n=>{n.mesh.scale.set(n.mesh.scale.x>1?1:1,1,1);n.mesh.material.opacity=1})});
+      els.toggle.addEventListener('mouseenter',()=>{els.hint.classList.remove('hidden');els.hint.classList.add('visible')});
+      els.toggle.addEventListener('mouseleave',()=>{els.hint.classList.remove('visible');setTimeout(()=>els.hint.classList.add('hidden'),400)});
+      addEventListener('keydown',e=>{if(e.key==='Escape')els.close.click()});
+      const cv=renderer.domElement;
+      const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+      cv.addEventListener('click',e=>{
+        if(e.target.closest('#info-panel,#mode-toggle,#cluster-sort-controls')) return;
+        mouse.x=(e.clientX/cv.clientWidth)*2-1; mouse.y=-(e.clientY/cv.clientHeight)*2+1;
+        ray.setFromCamera(mouse,camera);
+        const hits=ray.intersectObjects(state.nodes.map(n=>n.mesh));
+        if(hits.length){const n=state.nodes.find(x=>x.mesh===hits[0].object);if(n)selectNode(n)}else els.close.click();
+      });
+      cv.addEventListener('mousemove',e=>{
+        mouse.x=(e.clientX/cv.clientWidth)*2-1; mouse.y=-(e.clientY/cv.clientHeight)*2+1;
+        ray.setFromCamera(mouse,camera); const hits=ray.intersectObjects(state.nodes.map(n=>n.mesh));
+        state.nodes.forEach(n=>{if(n!==state.sel){n.mesh.scale.lerp(new THREE.Vector3(n.p.primary==='РАЗНОЕ'?1:1,1,1),0.1);n.mesh.material.opacity=THREE.MathUtils.lerp(n.mesh.material.opacity,1,0.1)}});
+        if(hits.length){const n=state.nodes.find(x=>x.mesh===hits[0].object);if(n&&n!==state.sel){n.mesh.scale.lerp(new THREE.Vector3(n.mesh.scale.x*1.1, n.mesh.scale.y*1.1, 1),0.15);cv.style.cursor='pointer'}}else{cv.style.cursor='grab'}
+      });
+    }
+
+    function sortNodes(){
+      state.nodes.forEach(n=>{n.target=state.sort==='district'?n.distPos:n.catPos;n.anim=true});
+      setTimeout(drawLinks,1000);
+    }
+    function resetNodes(){
+      state.nodes.forEach(n=>{n.target=n.chaos;n.anim=true});
+      setTimeout(()=>{state.links.forEach(l=>{group.remove(l.line);l.line.geometry.dispose();l.line.material.dispose()});state.links=[]},1000);
+    }
+    function selectNode(n){
+      if(state.sel) state.sel.mesh.scale.set(state.sel.mesh.scale.x>1?1:1,1,1);
+      state.sel=n; 
+      const scale = n.mesh.scale.x * CONFIG.FOCUS;
+      n.mesh.scale.set(scale, scale, 1); 
+      n.mesh.material.opacity=1;
+      state.nodes.forEach(x=>{if(x!==n)x.mesh.material.opacity=CONFIG.DIM});
+      els.vCat.textContent=n.p.raw; els.vMat.textContent='—'; els.vDist.textContent='—'; els.vWhat.textContent='—'; els.vId.textContent=`#${String(n.data.i).padStart(3,'0')}`;
+      els.dlBtn.href=n.data.url;
+      els.dlBtn.download=`VDK_${String(n.data.i).padStart(3,'0')}_${n.p.primary.toLowerCase().replace(/[^a-zа-яё0-9]/g,'_')}.jpg`;
+      els.dlBtn.style.display='inline-flex'; els.panel.classList.add('visible'); controls.autoRotate=false;
+    }
+
+    init();
+  </script>
+</body>
+</html>
