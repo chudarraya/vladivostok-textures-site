@@ -105,8 +105,7 @@
       CATS: ["РЕШЁТКИ","ТРЕЩИНЫ","КАМЕНЬ","РАЗНОЕ","ПРИРОДА","УЛИЧНОЕ ИСКУССТВО","БЕТОН","КИРПИЧ","МЕТАЛЛ","ЛЮКИ И СТОКИ","ДОРОГА","ЧИСЛА","СТЕКЛО","РЕКЛАМА","ДЕРЕВО","БАФФИНГ","МОЗАИКА","СТЕНА","ЗНАКИ"],
       FIXES: {"ТЕРЕЩЕНЫ":"ТРЕЩИНЫ","БФФИНГ":"БАФФИНГ","СТЕННА":"СТЕНА","КАМЕМНЬ":"КАМЕНЬ","КАМНИ":"КАМЕНЬ","РЗНОЕ":"РАЗНОЕ","УЛИЧНОЕ ИСКУССТО":"УЛИЧНОЕ ИСКУССТВО","УЛИЧНОЕ ИСКУССВТО":"УЛИЧНОЕ ИСКУССТВО","УЛИЧЫНЕ ЗНАКИ":"ЗНАКИ","ДОРОГ":"ДОРОГА","РЕШЁТКА":"РЕШЁТКИ","МЕТАЛЛ КРЫША":"МЕТАЛЛ","ОБОРВАННАЯ РЕКЛАМА":"РЕКЛАМА","ПЕСОК":"ПРИРОДА"}
     };
-
-    // ==========================================================
+        // ==========================================================
     // ПОЛНЫЙ МАССИВ НА 523 ТЕКСТУРЫ (вставлен из твоего кода)
     // ==========================================================
     const RAW_DATA = [
@@ -254,7 +253,7 @@
     }
 
     function loadBatch() {
-      const BATCH = 15, DELAY = 100;
+      const BATCH = 10, DELAY = 50;
       let idx = 0;
       function update() {
         loaded++;
@@ -267,12 +266,21 @@
         const end = Math.min(idx + BATCH, total);
         for (let i=idx; i<end; i++) {
           const d = RAW_DATA[i]; if (!d || !d.i) { update(); continue; }
-          // ✅ ИСПРАВЛЕННЫЙ URL: chuda-ai (правильный репозиторий)
-          const url = 'https://raw.githubusercontent.com/chuda-ai/vladivostok-textures-site/main/' + encodeURIComponent(d.i) + '%20(' + (d.i + 2) + ').JPG';
           
-          const img = new Image(); img.crossOrigin = 'anonymous'; img.src = url;
+          // ✅ ПРАВИЛЬНЫЙ URL: файлы называются "1 (2).JPG" где 2 = i+2
+          const fileName = d.i + '%20(' + (d.i + 2) + ').JPG';
+          const url = 'https://raw.githubusercontent.com/chuda-ai/vladivostok-textures-site/main/' + fileName;
+          
+          console.log('Загрузка:', url); // Для отладки
+          
+          const img = new Image(); 
+          img.crossOrigin = 'anonymous'; 
+          img.src = url;
+          
           img.onload = function() {
-            const tex = new THREE.Texture(this); tex.needsUpdate=true; tex.encoding=THREE.sRGBEncoding;
+            const tex = new THREE.Texture(this); 
+            tex.needsUpdate=true; 
+            tex.encoding=THREE.sRGBEncoding;
             const asp = this.width / this.height;
             const geo = new THREE.PlaneGeometry(asp * CONFIG.TEX_SIZE, CONFIG.TEX_SIZE);
             const mat = new THREE.MeshBasicMaterial({map:tex, transparent:true, opacity:1, side:THREE.DoubleSide});
@@ -287,11 +295,13 @@
             state.nodes.push(n); group.add(mesh);
             update();
           };
+          
           img.onerror = function() {
-            // Fallback при 404
+            console.warn('❌ 404:', url);
+            // Fallback с номером
             const cv=document.createElement('canvas'); cv.width=cv.height=128;
-            const ctx=cv.getContext('2d'); ctx.fillStyle='#222'; ctx.fillRect(0,0,128,128);
-            ctx.fillStyle='#555'; ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText('#'+d.i,64,70);
+            const ctx=cv.getContext('2d'); ctx.fillStyle='#2a2a2a'; ctx.fillRect(0,0,128,128);
+            ctx.fillStyle='#ffffff'; ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText('#'+d.i,64,70);
             const tex = new THREE.CanvasTexture(cv);
             const geo = new THREE.PlaneGeometry(CONFIG.TEX_SIZE, CONFIG.TEX_SIZE);
             const mat = new THREE.MeshBasicMaterial({map:tex, transparent:true, opacity:1, side:THREE.DoubleSide});
@@ -407,9 +417,9 @@
       els.vDist.textContent = n.data.d || '—';
       els.vWhat.textContent = n.data.w || '—';
       els.vId.textContent = '#' + String(n.data.i).padStart(3,'0');
-      // ✅ ИСПРАВЛЕННЫЙ URL для скачивания
-      els.dlBtn.href = 'https://raw.githubusercontent.com/chuda-ai/vladivostok-textures-site/main/' + encodeURIComponent(n.data.i) + '%20(' + (n.data.i + 2) + ').JPG';
-      els.dlBtn.download = 'VDK_'+String(n.data.i).padStart(3,'0')+'_'+n.p.pri.toLowerCase().replace(/[^a-zа-яё0-9]/g,'_')+'.jpg';
+      const url = 'https://raw.githubusercontent.com/chuda-ai/vladivostok-textures-site/main/' + n.data.i + '%20(' + (n.data.i + 2) + ').JPG';
+      els.dlBtn.href = url;
+      els.dlBtn.download = 'VDK_'+String(n.data.i).padStart(3,'0')+'.jpg';
       els.dlBtn.style.display = 'inline-flex';
       els.panel.classList.add('visible');
       controls.autoRotate = false;
