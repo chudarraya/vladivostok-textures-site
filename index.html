@@ -1,312 +1,619 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Город как текстура | Владивосток</title>
-  <style>
-    :root{--bg:#070707;--panel:rgba(18,18,22,.92);--text:#fff;--accent:#7ea9ff;--border:rgba(255,255,255,.07)}
-    *{margin:0;padding:0;box-sizing:border-box}
-    html,body,#app{width:100%;height:100%;overflow:hidden;background:#070707 !important;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;font-size:16px;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:none}
-    #canvas-container{position:absolute;inset:0;touch-action:none}
-    canvas{display:block;touch-action:none;background:#070707}
-    #overlay{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 0%,rgba(0,0,0,.25) 55%,rgba(0,0,0,.92) 100%);pointer-events:none;z-index:2}
-    #loader{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;z-index:999;background:#070707;transition:opacity .5s}
-    #loader.hidden{opacity:0;pointer-events:none}
-    .loader-title{font-size:18px;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.6)}
-    .loader-progress{width:min(320px,80vw);height:4px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.1)}
-    #progress-bar{width:0%;height:100%;background:var(--accent);transition:width .2s}
-    #progress-text{font-size:14px;color:rgba(255,255,255,.7)}
-    #header{position:absolute;top:32px;left:36px;z-index:20;pointer-events:none}
-    #project-title{font-size:20px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;opacity:.95;margin-bottom:6px}
-    #project-author{font-size:16px;opacity:.5}
-    #info-panel{position:absolute;top:32px;right:36px;width:640px;padding:32px 36px;background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;z-index:25;opacity:0;transform:translateY(-16px);transition:all .4s cubic-bezier(.16,1,.3,1);pointer-events:none}
-    #info-panel.visible{opacity:1;transform:translateY(0);pointer-events:auto}
-    #info-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.05)}
-    #info-name{font-size:32px;font-weight:600;line-height:1.1}
-    #info-close{font-size:28px;opacity:.5;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:.2s}
-    #info-close:hover{opacity:1;background:rgba(255,255,255,.08)}
-    #info-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 28px;margin-bottom:20px}
-    .info-row{display:flex;flex-direction:column;gap:6px}
-    .label{font-size:16px;opacity:.45;letter-spacing:.02em;text-transform:uppercase;font-weight:500}
-    .value{font-size:20px;font-weight:500;line-height:1.3}
-    #info-hint{font-size:16px;opacity:.35;text-align:right;margin-top:8px}
-    #download-btn:hover{background:rgba(255,255,255,.2)!important;transform:translateY(-1px)}
-    #controls-hint{position:absolute;bottom:28px;left:36px;color:rgba(255,255,255,.4);font-size:16px;letter-spacing:.02em;z-index:15;pointer-events:none}
-    
-    /* НОВЫЙ СЕЛЕКТОР КЛАСТЕРОВ */
-    #cluster-selector{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:24px;background:rgba(7,7,7,.85);z-index:50;transition:opacity .4s}
-    #cluster-selector.hidden{opacity:0;pointer-events:none}
-    .mode-btns{display:flex;gap:16px}
-    .mode-btn{padding:12px 24px;background:transparent;border:1px solid var(--border);border-radius:30px;color:#fff;font-size:16px;cursor:pointer;transition:.2s}
-    .mode-btn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3)}
-    .mode-btn.active{background:var(--accent);border-color:var(--accent);color:#000}
-    #cluster-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;max-width:800px;padding:20px;max-height:60vh;overflow-y:auto}
-    .cluster-btn{padding:10px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:#fff;cursor:pointer;transition:.2s;text-align:center}
-    .cluster-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.4)}
-    .cluster-btn small{display:block;margin-top:4px;opacity:.5;font-size:12px}
+<!-- ===================================================== -->
+<!--     Digital_Art_Archive_VDK — STABLE EDITION          -->
+<!--              author: chu.da_ai/ · 2026                -->
+<!-- ===================================================== -->
 
-    @media(max-width:700px){
-      #info-panel{top:auto;bottom:80px;right:16px;left:16px;width:auto;padding:20px}
-      #cluster-grid{grid-template-columns:repeat(2,1fr);max-height:50vh}
-      #controls-hint{display:none}
-    }
-  </style>
-</head>
-<body>
-  <div id="app">
-    <div id="loader"><div class="loader-title">ЗАГРУЗКА АРХИВА</div><div class="loader-progress"><div id="progress-bar"></div></div><div id="progress-text">0%</div></div>
-    <div id="canvas-container"></div><div id="overlay"></div>
-    <div id="header"><div id="project-title">Digital_Art_Archive_VDK</div><div id="project-author">by chu.da_ai/ · 2026</div></div>
-    
+<div id="app">
+    <div id="canvas-container"></div>
+    <div id="overlay"></div>
+
+    <!-- HEADER: TOP LEFT -->
+    <div id="header">
+        <div id="project-title">Digital_Art_Archive_VDK</div>
+        <div id="project-author">by chu.da_ai/ · 2026</div>
+    </div>
+
+    <!-- INFO PANEL: TOP RIGHT -->
     <div id="info-panel">
-      <div id="info-header"><div id="info-name">ТЕКСТУРА</div><div id="info-close">×</div></div>
-      <div id="info-grid">
-        <div class="info-row"><span class="label">Категория</span><span class="value" id="val-category">—</span></div>
-        <div class="info-row"><span class="label">Дата</span><span class="value" id="val-material">—</span></div>
-        <div class="info-row"><span class="label">Район</span><span class="value" id="val-district">—</span></div>
-        <div class="info-row"><span class="label">Что это</span><span class="value" id="val-what">—</span></div>
-        <div class="info-row"><span class="label">Номер</span><span class="value" id="val-id">—</span></div>
-      </div>
-      <div class="info-row" style="grid-column:1/-1;margin-top:12px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)">
-        <a id="download-btn" href="#" download target="_blank" style="display:none;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:#fff;font-size:15px;font-weight:500;text-decoration:none;transition:all .2s;cursor:pointer;width:fit-content"><span>↓</span> Скачать оригинал</a>
-      </div>
-      <div id="info-hint">нажмите в пустое место или ESC чтобы закрыть</div>
+        <div id="info-header">
+            <div id="info-name">TEXTURE</div>
+            <div id="info-close">✕</div>
+        </div>
+        <div id="info-grid">
+            <div class="info-row">
+                <span class="label">Название</span>
+                <span class="value" id="val-name">—</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Район</span>
+                <span class="value" id="val-district">—</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Материал</span>
+                <span class="value" id="val-material">—</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Что это</span>
+                <span class="value" id="val-what">—</span>
+            </div>
+            <div class="info-row">
+                <span class="label">ID</span>
+                <span class="value" id="val-id">—</span>
+            </div>
+        </div>
+        <div id="info-hint">нажмите в пустое место или ESC чтобы закрыть</div>
     </div>
 
-    <div id="cluster-selector">
-      <div style="color:#fff;font-size:18px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Выберите режим сортировки</div>
-      <div class="mode-btns">
-        <button class="mode-btn" data-mode="district">📍 По районам</button>
-        <button class="mode-btn" data-mode="category">🎨 По категориям</button>
-      </div>
-      <div id="cluster-grid"></div>
+    <!-- CONTROLS HINT -->
+    <div id="controls-hint">drag • wheel • click</div>
+
+    <!-- LOADER -->
+    <div id="loader">
+        <div class="loader-text">LOADING ARCHIVE</div>
     </div>
+</div>
 
-    <div id="controls-hint">перетаскивайте • колёсико • клик</div>
-  </div>
+<style>
+/* ===== BASE RESET ===== */
+html, body {
+    margin: 0; padding: 0;
+    background: #000;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px;
+}
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script>
-    // ================= ДАННЫЕ =================
-    // Полная база из 523 записей (сокращена для стабильности, логика работает с любой длиной)
-    const RAW_DATA = [
-      {i:1,c:"РЕШЁТКИ",d:"Фрунзенский район",dt:"07.03.2026",w:"Решётка уличного балкона"},
-      {i:2,c:"РЕШЁТКИ",d:"Фрунзенский район",dt:"07.03.2026",w:"Решётка уличного балкона"},
-      {i:3,c:"РЕШЁТКИ",d:"Фрунзенский район",dt:"07.03.2026",w:"Решётка уличного балкона"},
-      {i:4,c:"РЕШЁТКИ",d:"Фрунзенский район",dt:"07.03.2026",w:"Решётка уличного балкона"},
-      {i:5,c:"РЕШЁТКИ",d:"Фрунзенский район",dt:"07.03.2026",w:"Решётка уличного балкона"},
-      {i:6,c:"ТРЕЩИНЫ",d:"Фрунзенский район",dt:"07.03.2026",w:"Трещины на стене"},
-      {i:7,c:"ТРЕЩИНЫ",d:"Фрунзенский район",dt:"07.03.2026",w:"Трещины на стене"},
-      {i:8,c:"ТРЕЩИНЫ",d:"Фрунзенский район",dt:"07.03.2026",w:"Трещины на стене"},
-      {i:9,c:"КАМЕНЬ",d:"остров Русский",dt:"02.11.2025",w:"Скала, бухта Аякс"},
-      {i:10,c:"РАЗНОЕ",d:"остров Русский",dt:"02.11.2025",w:"Рыбацкая сеть"},
-      {i:11,c:"ПРИРОДА",d:"остров Русский",dt:"02.11.2025",w:"Осенняя листва"},
-      {i:12,c:"ПРИРОДА ДЕРЕВО",d:"остров Русский",dt:"02.11.2025",w:"Кора дерева"},
-      {i:13,c:"ПРИРОДА ДЕРЕВО",d:"остров Русский",dt:"02.11.2025",w:"Кора дерева"},
-      {i:14,c:"ПРИРОДА ДЕРЕВО",d:"остров Русский",dt:"02.11.2025",w:"Кора дерева"},
-      {i:15,c:"ПРИРОДА",d:"остров Русский",dt:"02.11.2025",w:"Осенняя трава"},
-      {i:23,c:"УЛИЧНОЕ ИСКУССТВО",d:"Первомайский район",dt:"06.06.2026",w:"Граффити на подпорной стене"},
-      {i:24,c:"УЛИЧНОЕ ИСКУССТВО",d:"Первомайский район",dt:"06.06.2026",w:"Граффити на подпорной стене"},
-      {i:25,c:"БЕТОН",d:"Первомайский район",dt:"06.06.2026",w:"Лестница на Окатовой"},
-      {i:48,c:"УЛИЧНОЕ ИСКУССТВО",d:"Ленинский район",dt:"06.06.2026",w:"Руины рынка на Луговой"},
-      {i:66,c:"БАФФИНГ",d:"Ленинский район",dt:"06.06.2026",w:"Баффинг рекламы"},
-      {i:154,c:"МОЗАИКА",d:"Ленинский район",dt:"06.06.2026",w:"Мозаика в подъезде"},
-      {i:250,c:"РЕШЁТКИ",d:"Советский район",dt:"17.06.2026",w:"Советский МАФ"},
-      {i:300,c:"ЧИСЛА",d:"Советский район",dt:"17.06.2026",w:"Номер дома"},
-      {i:450,c:"РЕШЁТКИ",d:"Ленинский район",dt:"19.06.2026",w:"Ограда"},
-      {i:483,c:"ЧИСЛА",d:"Ленинский район",dt:"19.06.2026",w:"Цифры на стене"},
-      {i:509,c:"УЛИЧНОЕ ИСКУССТВО",d:"Первомайский район",dt:"04.11.2025",w:"Граффити на сфере ПВО"}
-      // ... (в реальном файле здесь все 523 строки. Логика работает с любым количеством)
-    ];
+#app {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #000;
+    overflow: hidden;
+}
 
-    // Нормализация категорий/районов
-    const FIXES = {"ТЕРЕЩЕНЫ":"ТРЕЩИНЫ","БФФИНГ":"БАФФИНГ","СТЕННА":"СТЕНА","КАМЕМНЬ":"КАМЕНЬ","РЗНОЕ":"РАЗНОЕ","УЛИЧНОЕ ИСКУССТО":"УЛИЧНОЕ ИСКУССТВО","УЛИЧЫНЕ ЗНАКИ":"ЗНАКИ","ДОРОГ":"ДОРОГА","РЕШЁТКА":"РЕШЁТКИ","МЕТАЛЛ КРЫША":"МЕТАЛЛ","ОБОРВАННАЯ РЕКЛАМА":"РЕКЛАМА","ПЕСОК":"ПРИРОДА","СТЕНА ТРЕЩИНЫ":"СТЕНА","КАМНИ":"КАМЕНЬ"};
+#canvas-container { position: absolute; inset: 0; }
+canvas { display: block; }
+
+/* ===== ATMOSPHERE ===== */
+#overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.92) 100%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ===== HEADER ===== */
+#header {
+    position: absolute;
+    top: 32px; left: 36px;
+    z-index: 20;
+    color: #fff;
+}
+#project-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    opacity: .95;
+    margin-bottom: 6px;
+    line-height: 1.2;
+}
+#project-author {
+    font-size: 16px;
+    opacity: .5;
+    letter-spacing: .01em;
+    font-weight: 400;
+}
+
+/* ===== INFO PANEL ===== */
+#info-panel {
+    position: absolute;
+    top: 32px; right: 36px;
+    width: 640px;
+    padding: 32px 36px;
+    background: rgba(12,12,16,.86);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 20px;
+    color: #fff;
+    z-index: 25;
+    opacity: 0;
+    transform: translateY(-16px);
+    transition: all .4s cubic-bezier(.16,1,.3,1);
+    pointer-events: none;
+}
+#info-panel.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+#info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+#info-name { 
+    font-size: 32px; 
+    font-weight: 600; 
+    letter-spacing: -.01em; 
+    line-height: 1.1;
+}
+#info-close {
+    font-size: 28px; opacity: .5; cursor: pointer;
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; transition: opacity .2s, background .2s;
+}
+#info-close:hover { opacity: 1; background: rgba(255,255,255,.08); }
+#info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 28px;
+    margin-bottom: 20px;
+}
+.info-row { display: flex; flex-direction: column; gap: 6px; }
+.label { 
+    font-size: 16px; 
+    opacity: .45; 
+    letter-spacing: .02em; 
+    text-transform: uppercase;
+    font-weight: 500;
+}
+.value { 
+    font-size: 20px; 
+    font-weight: 500; 
+    letter-spacing: 0;
+    line-height: 1.3;
+}
+#info-hint {
+    font-size: 16px; opacity: .35; text-align: right; letter-spacing: 0; margin-top: 8px;
+    font-weight: 400;
+}
+
+/* ===== HINTS ===== */
+#controls-hint {
+    position: absolute;
+    bottom: 28px; right: 36px;
+    color: rgba(255,255,255,.4);
+    font-size: 16px; letter-spacing: .02em;
+    z-index: 15; pointer-events: none;
+    font-weight: 400;
+}
+
+/* ===== LOADER ===== */
+#loader {
+    position: absolute; inset: 0;
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999;
+    transition: opacity .5s ease, visibility .5s ease;
+}
+#loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.loader-text { 
+    color: rgba(255,255,255,.5); 
+    font-size: 16px; 
+    letter-spacing: .15em; 
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+    #info-panel { width: 480px; padding: 28px 32px; }
+    #info-grid { grid-template-columns: 1fr; gap: 16px; }
+    #info-name { font-size: 28px; }
+    .value { font-size: 18px; }
+    .label { font-size: 16px; }
+}
+@media (max-width: 700px) {
+    #header { top: 24px; left: 24px; }
+    #project-title { font-size: 18px; }
+    #project-author { font-size: 16px; }
+    #info-panel { 
+        top: 24px; right: 24px; 
+        width: calc(100vw - 48px); 
+        max-width: 420px; 
+        padding: 26px 28px; 
+    }
+    #info-name { font-size: 26px; }
+    .value { font-size: 18px; }
+    #controls-hint { bottom: 24px; right: 24px; font-size: 16px; }
+    #info-hint { font-size: 16px; }
+}
+</style>
+
+<!-- THREE.JS & CONTROLS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+/* ===================================================== */
+/*                  ⚙️ НАСТРОЙКИ (не меняйте без нужды)   */
+/* ===================================================== */
+const CONFIG = {
+    textureSize: 2.8,           // Размер текстур
+    minZoom: 0.1,               // 🔍 Максимальное приближение (чем меньше, тем ближе)
+    maxZoom: 100,               // 🔍 Максимальное отдаление
+    cameraStartZ: 22,           // Стартовая позиция камеры
+    rotationSpeed: 0.0004,      // Скорость авто-вращения
+    focusScale: 4,            // Увеличение при клике
+    dimOpacity: 0.02,           // Прозрачность неактивных текстур
+    spread: {
+        horizontal: 32,         // Разброс влево-вправо
+        vertical: 20,           // Разброс вверх-вниз
+        depth: 50,              // Разброс в глубину/ближе
+        eyeLevelBias: 0.65      // Доля текстур на уровне глаз (0.0 - 1.0)
+    }
+};
+
+/* ===================================================== */
+/*                  🖼️ ВАШИ 48 ТЕКСТУРЫ                   */
+/* ===================================================== */
+/* ИНСТРУКЦИЯ: Меняйте только текст в кавычках после: */
+/* district: "ваш район", material: "ваш материал", whatIsIt: "ваше описание" */
+const TEXTURES = [
+    { id: 1,  url: "https://static.tildacdn.com/tild3530-3364-4432-b339-656130626164/1.png",       district: "Первомайский", material: "Металл и краска", whatIsIt: "Граффити на вышке" },
+    { id: 2,  url: "https://static.tildacdn.com/tild6635-3730-4536-a164-316134346233/2.png",       district: "Первомайский", material: "Металл", whatIsIt: "Решётка на вышке" },
+    { id: 3,  url: "https://static.tildacdn.com/tild6231-3630-4636-a530-663234353735/3.png",       district: "Первомайский", material: "Металл", whatIsIt: "Граффити на вышке" },
+    { id: 4,  url: "https://static.tildacdn.com/tild3761-6466-4631-a265-656336323361/0_4.png",     district: "Первомайский", material: "Металл", whatIsIt: "Граффити на вышке" },
+    { id: 5,  url: "https://static.tildacdn.com/tild3035-6630-4439-b365-643732313864/0_5.png",     district: "Советский", material: "Кирпич", whatIsIt: "Стена гаража" },
+    { id: 6,  url: "https://static.tildacdn.com/tild3131-3033-4436-b230-663638626366/0_6.png",     district: "Фрунзенский", material: "Металл", whatIsIt: "Ограда на балконе АртЭтажа" },
+    { id: 7,  url: "https://static.tildacdn.com/tild3763-6130-4437-b539-616637323265/0_7.png",     district: "Фрунзенский", material: "Металл", whatIsIt: "Ограда внутри АртЭтажа" },
+    { id: 8,  url: "https://static.tildacdn.com/tild3935-3832-4236-b038-373535393937/0_8.png",     district: "Фрунзенский", material: "Краска", whatIsIt: "Стена внутри дома" },
+    { id: 9,  url: "https://static.tildacdn.com/tild3630-6363-4133-b537-316334656661/0_9.png",     district: "Фрунзенский", material: "Бетон", whatIsIt: "Стена внутри дома" },
+    { id: 10, url: "https://static.tildacdn.com/tild3565-3964-4665-b731-353261346262/0_10.png",    district: "Фрунзенский", material: "Бетон и краска", whatIsIt: "Стена подъезда" },
+    { id: 11, url: "https://static.tildacdn.com/tild3338-3330-4135-a138-633633306462/0_11.png",    district: "Фрунзенский", material: "Бетон и краска", whatIsIt: "Ступень с жёлтой линией" },
+    { id: 12, url: "https://static.tildacdn.com/tild3837-6664-4538-b631-373930343833/0_12.png",    district: "Фрунзенский", material: "Дерево", whatIsIt: "Деревянная скамейка" },
+    { id: 13, url: "https://static.tildacdn.com/tild6433-6164-4033-b834-313634646162/0_13.png",    district: "Фрунзенский", material: "Металл", whatIsIt: "Решётка подъезда" },
+    { id: 14, url: "https://static.tildacdn.com/tild3636-3264-4834-b739-313362306463/0_14.png",    district: "Фрунзенский", material: "Керамика", whatIsIt: "Пол внутри АртЭтажей" },
+    { id: 15, url: "https://static.tildacdn.com/tild3965-3563-4766-b032-373033663161/0_15.png",    district: "Русский остров", material: "Природный", whatIsIt: "Скала" },
+    { id: 16, url: "https://static.tildacdn.com/tild3666-6364-4432-b565-626335373539/0_16.png",    district: "Русский остров", material: "Искуственный", whatIsIt: "Запутання сетка, найденная на берегу моря" },
+    { id: 17, url: "https://static.tildacdn.com/tild6436-3638-4531-b435-623836343438/0_17.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осення листва" },
+    { id: 18, url: "https://static.tildacdn.com/tild3233-3031-4931-a265-383663653430/0_18.png",    district: "Русский остров", material: "Искуственный", whatIsIt: "Мой блокнот на пляже" },
+    { id: 19, url: "https://static.tildacdn.com/tild6334-6630-4331-a361-636565393938/0_19.png",    district: "Русский остров", material: "Природный", whatIsIt: "Кора дерева на берегу моря" },
+    { id: 20, url: "https://static.tildacdn.com/tild3434-6237-4138-a262-636636343339/0_20.png",    district: "Русский остров", material: "Природный", whatIsIt: "Кора дерева на берегу моря" },
+    { id: 21, url: "https://static.tildacdn.com/tild3362-6435-4566-b466-386334306432/0_21.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осенняя трава" },
+    { id: 22, url: "https://static.tildacdn.com/tild6566-3030-4964-b066-396531656637/0_22.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осенняя трава" },
+    { id: 23, url: "https://static.tildacdn.com/tild3135-6432-4832-b430-373764653430/0_23.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осенняя трава" },
+    { id: 24, url: "https://static.tildacdn.com/tild3533-3863-4162-b231-616237613832/0_24.png",    district: "Русский остров", material: "Природный", whatIsIt: "Мёртвая морская звезда" },
+    { id: 25, url: "https://static.tildacdn.com/tild6134-3036-4166-b533-343039383930/0_25.png",    district: "Русский остров", material: "Природный", whatIsIt: "Скала" },
+    { id: 26, url: "https://static.tildacdn.com/tild6366-6665-4331-a632-646165303032/0_26.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшее осеннее растение на скале" },
+    { id: 27, url: "https://static.tildacdn.com/tild6264-3939-4330-a361-343533313766/0_27.png",    district: "Русский остров", material: "Искуственный", whatIsIt: "Пенопласт выбрашенный морем" },
+    { id: 28, url: "https://static.tildacdn.com/tild6132-6231-4463-b931-633033663362/0_28.png",    district: "Русский остров", material: "Искуственный", whatIsIt: "Пенопласт выбрашенный морем" },
+    { id: 29, url: "https://static.tildacdn.com/tild3332-3466-4562-b231-336263666466/0_29.png",    district: "Русский остров", material: "Природный", whatIsIt: "Галька на пляже за ДВФУ" },
+    { id: 30, url: "https://static.tildacdn.com/tild6535-6136-4462-b330-393536373738/0_30.png",    district: "Русский остров", material: "Природный", whatIsIt: "Засохшая осенняя трава" },
+    { id: 31, url: "https://static.tildacdn.com/tild6662-3039-4063-b431-633062623636/0_31.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 32, url: "https://static.tildacdn.com/tild6330-3566-4338-a437-323266303864/0_32.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 33, url: "https://static.tildacdn.com/tild3433-6465-4361-b336-346539306466/0_33.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 34, url: "https://static.tildacdn.com/tild6138-3261-4139-a165-323762643066/0_34.png",    district: "Советский", material: "Бетон и бумага", whatIsIt: "Бетонный столб с оборванным объявлением" },
+    { id: 35, url: "https://static.tildacdn.com/tild6165-3236-4637-b534-663163346239/0_35.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 36, url: "https://static.tildacdn.com/tild6264-3235-4739-a165-383436623233/0_36.png",    district: "Советский", material: "Бетон и бумага", whatIsIt: "Бетонный столб с оборванным объявлением" },
+    { id: 37, url: "https://static.tildacdn.com/tild3133-3334-4435-a133-376431653561/0_37.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 38, url: "https://static.tildacdn.com/tild3362-3066-4764-a434-353131393064/0_38.png",    district: "Первомайский", material: "Гудрон", whatIsIt: "Гудрон на бетонной крыше" },
+    { id: 39, url: "https://static.tildacdn.com/tild6463-3432-4664-b063-386639636232/0_39.png",    district: "Советский", material: "Асфальт", whatIsIt: "Трещины на асфальте" },
+    { id: 40, url: "https://static.tildacdn.com/tild6338-6330-4965-b962-623465363135/0_40.png",    district: "Первомайский", material: "Гудрон", whatIsIt: "Гудрон на бетонной крыше" },
+    { id: 41, url: "https://static.tildacdn.com/tild3035-3531-4534-a437-363139623835/0_41.png",    district: "Советский", material: "Асфальт", whatIsIt: "Дыра на асфальте" },
+    { id: 42, url: "https://static.tildacdn.com/tild3836-3634-4130-b232-653363326631/0_42.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 43, url: "https://static.tildacdn.com/tild3234-3036-4336-a638-343438353734/0_43.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Текстура обшивки сферы ПВО" },
+    { id: 44, url: "https://static.tildacdn.com/tild6264-6263-4339-b866-313431656230/0_44.png",    district: "Советский", material: "Керамика", whatIsIt: "Керамическая плитка" },
+    { id: 45, url: "https://static.tildacdn.com/tild3936-3831-4061-b761-356165633437/0_45.png",    district: "Первомайский", material: "Бетон", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 46, url: "https://static.tildacdn.com/tild3836-3364-4663-a630-376164336137/0_46.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 47, url: "https://static.tildacdn.com/tild3663-3263-4539-a462-613263633135/0_47.png",    district: "Первомайский", material: "МДФ", whatIsIt: "Граффити на сфере ПВО" },
+    { id: 48, url: "https://static.tildacdn.com/tild6431-6663-4062-a534-383139623338/48.png",      district: "Советский", material: "Белый кирпич", whatIsIt: "Стена гаража" }
+];
+
+/* ===================================================== */
+/*                  ⚙️ THREE.JS ИНИЦИАЛИЗАЦИЯ            */
+/* ===================================================== */
+// Ссылки на элементы
+const app = document.getElementById('app');
+const container = document.getElementById('canvas-container');
+const infoPanel = document.getElementById('info-panel');
+const infoCloseBtn = document.getElementById('info-close');
+const loader = document.getElementById('loader');
+const valName = document.getElementById('val-name');
+const valDistrict = document.getElementById('val-district');
+const valMaterial = document.getElementById('val-material');
+const valWhat = document.getElementById('val-what');
+const valId = document.getElementById('val-id');
+
+// Сцена, Камера, Рендерер
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+scene.fog = new THREE.Fog(0x000000, 30, 110);
+
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 400);
+camera.position.set(0, 0, CONFIG.cameraStartZ);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+container.appendChild(renderer.domElement);
+
+// Управление камерой
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.enablePan = false;
+controls.minDistance = CONFIG.minZoom;
+controls.maxDistance = CONFIG.maxZoom;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.35;
+
+// Свет
+scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+dirLight.position.set(5, 8, 5);
+scene.add(dirLight);
+
+// Группа для текстур
+const group = new THREE.Group();
+scene.add(group);
+
+// Массивы и загрузчик
+const meshes = [];
+const textureLoader = new THREE.TextureLoader();
+let loadedCount = 0;
+let isLoaderHidden = false;
+
+/* ===================================================== */
+/*                  🎲 ГЕНЕРАЦИЯ ПОЗИЦИЙ                 */
+/* ===================================================== */
+function getImmersivePosition() {
+    const s = CONFIG.spread;
+    const isEyeLevel = Math.random() < s.eyeLevelBias;
+    let x, y, z;
+
+    if (isEyeLevel) {
+        x = (Math.random() * 2 - 1) * s.horizontal;
+        y = (Math.random() * 2 - 1) * (s.vertical * 0.35);
+        z = (Math.random() * 2 - 1) * s.depth;
+    } else {
+        const isAbove = Math.random() > 0.5;
+        x = (Math.random() * 2 - 1) * (s.horizontal * 0.7);
+        y = (isAbove ? 1 : -1) * (s.vertical * 0.5 + Math.random() * s.vertical * 0.5);
+        z = (Math.random() * 2 - 1) * (s.depth * 0.8);
+    }
+
+    // Минимальное расстояние от центра, чтобы не перекрывать камеру
+    const dist = Math.sqrt(x*x + y*y + z*z);
+    if (dist < 6) {
+        const scale = 6 / dist;
+        x *= scale; y *= scale; z *= scale;
+    }
+
+    return { x, y, z };
+}
+
+/* ===================================================== */
+/*                  🖼️ СОЗДАНИЕ ОБЪЕКТОВ                */
+/* ===================================================== */
+function createMesh(data) {
+    const geometry = new THREE.PlaneGeometry(CONFIG.textureSize, CONFIG.textureSize);
     
-    function normalize(str) {
-      if(!str) return "РАЗНОЕ";
-      let s = str.replace(/\|/g,' ').trim();
-      for(let[t,f] of Object.entries(FIXES)) s = s.replace(new RegExp(t,'gi'), f);
-      return s.split(',')[0].trim() || s.split(' ')[0] || "РАЗНОЕ";
-    }
+    textureLoader.load(
+        data.url,
+        (texture) => {
+            // Настройка текстуры
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    RAW_DATA.forEach(d => { d.cNorm = normalize(d.c); d.dNorm = normalize(d.d); });
+            // Материал
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 1,
+                side: THREE.DoubleSide
+            });
 
-    // ================= THREE.JS =================
-    let scene, camera, renderer, controls;
-    let activeMeshes = [];
-    let isLoading = false;
-    const loader = new THREE.TextureLoader();
-    const MAX_VISIBLE = 60; // Лимит для стабильности
+            // Сетка
+            const mesh = new THREE.Mesh(geometry, material);
+            const pos = getImmersivePosition();
+            mesh.position.set(pos.x, pos.y, pos.z);
+            
+            // Всегда смотрит на камеру
+            mesh.lookAt(camera.position);
+            mesh.rotation.z = (Math.random() - 0.5) * 0.5;
 
-    function initScene() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x070707);
-      scene.fog = new THREE.Fog(0x070707, 20, 100);
-      camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 500);
-      camera.position.set(0, 0, 40);
-      
-      renderer = new THREE.WebGLRenderer({antialias:true, alpha:false, powerPreference:"high-performance"});
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setClearColor(0x070707, 1);
-      document.getElementById('canvas-container').appendChild(renderer.domElement);
-      
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true; controls.autoRotate = true; controls.autoRotateSpeed = 0.5;
-      controls.minDistance = 5; controls.maxDistance = 80;
-      
-      scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-      const dir = new THREE.DirectionalLight(0xffffff, 1); dir.position.set(10,15,10); scene.add(dir);
-      
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-      
-      animate();
-    }
+            // Данные
+            mesh.userData = {
+                name: data.name || `VDK_${String(data.id).padStart(2, '0')}`,
+                district: data.district || "—",
+                material: data.material || "—",
+                whatIsIt: data.whatIsIt || "—",
+                id: data.id
+            };
 
-    function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+            group.add(mesh);
+            meshes.push(mesh);
 
-    // ================= ЗАГРУЗКА КЛАСТЕРА =================
-    async function loadCluster(items) {
-      if(isLoading) return;
-      isLoading = true;
-      disposeActive();
-      document.getElementById('loader').classList.remove('hidden');
-      
-      const batch = items.slice(0, MAX_VISIBLE);
-      const progressEl = document.getElementById('progress-bar');
-      const textEl = document.getElementById('progress-text');
-      let loaded = 0;
-
-      const promises = batch.map(d => new Promise(resolve => {
-        const url = `https://raw.githubusercontent.com/chudarraya/vladivostok-textures/main/1%20(${d.i}).${d.i===1?'png':'JPG'}`;
-        const img = new Image(); img.crossOrigin='anonymous'; img.src=url;
-        img.onload = () => resolve({data:d, img, url});
-        img.onerror = () => resolve({data:d, img:null, url});
-      }));
-
-      const results = await Promise.all(promises);
-      
-      for(let r of results) {
-        loaded++;
-        const pct = Math.round((loaded/batch.length)*100);
-        progressEl.style.width = pct+'%'; textEl.textContent = `${pct}% (${loaded}/${batch.length})`;
-        
-        const d = r.data;
-        let tex;
-        if(r.img) {
-          tex = new THREE.Texture(r.img); tex.needsUpdate=true;
-        } else {
-          const cv = document.createElement('canvas'); cv.width=cv.height=128;
-          const ctx = cv.getContext('2d'); ctx.fillStyle='#222'; ctx.fillRect(0,0,128,128);
-          ctx.fillStyle='#555'; ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText('#'+d.i,64,70);
-          tex = new THREE.CanvasTexture(cv);
+            // Счётчик загрузки
+            loadedCount++;
+            if (loadedCount === TEXTURES.length && !isLoaderHidden) {
+                hideLoader();
+            }
+        },
+        undefined,
+        (err) => {
+            console.warn("Ошибка загрузки:", data.url);
+            loadedCount++;
+            if (loadedCount === TEXTURES.length && !isLoaderHidden) {
+                hideLoader();
+            }
         }
-        
-        const aspect = r.img ? (r.img.width/r.img.height) : 1;
-        const geo = new THREE.PlaneGeometry(aspect*1.6, 1.6);
-        const mat = new THREE.MeshBasicMaterial({map:tex, transparent:true, opacity:1, side:THREE.DoubleSide});
-        const mesh = new THREE.Mesh(geo, mat);
-        
-        mesh.position.set((Math.random()-0.5)*25, (Math.random()-0.5)*15, (Math.random()-0.5)*25);
-        mesh.userData = {...d, originalPos: mesh.position.clone()};
-        scene.add(mesh); activeMeshes.push(mesh);
-        
-        // Небольшая задержка чтобы не блокировать поток
-        await new Promise(r => setTimeout(r, 30));
-      }
-      
-      setTimeout(() => document.getElementById('loader').classList.add('hidden'), 400);
-      isLoading = false;
-    }
+    );
+}
 
-    function disposeActive() {
-      activeMeshes.forEach(m => {
-        scene.remove(m);
-        m.geometry.dispose();
-        if(m.material.map) m.material.map.dispose();
-        m.material.dispose();
-      });
-      activeMeshes = [];
-    }
+// Запуск создания всех 48 текстур
+TEXTURES.forEach(createMesh);
 
-    // ================= UI ЛОГИКА =================
-    const selector = document.getElementById('cluster-selector');
-    const grid = document.getElementById('cluster-grid');
-    let currentMode = null;
+// Гарантированное скрытие лоадера (если сеть тормозит)
+function hideLoader() {
+    if (isLoaderHidden) return;
+    isLoaderHidden = true;
+    loader.classList.add('hidden');
+}
+setTimeout(hideLoader, 3000); // Через 3 секунды точно уберётся
 
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentMode = btn.dataset.mode;
-        renderClusterButtons();
-      });
+/* ===================================================== */
+/*                  🖱️ ИНТЕРАКЦИЯ                        */
+/* ===================================================== */
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let hoveredMesh = null;
+let selectedMesh = null;
+
+function updateMouse(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+function checkHover() {
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(meshes);
+
+    // Сброс ховера для невыбранных
+    meshes.forEach(m => {
+        if (m !== selectedMesh) {
+            m.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+            m.material.opacity = THREE.MathUtils.lerp(m.material.opacity, 1, 0.1);
+        }
     });
 
-    function renderClusterButtons() {
-      grid.innerHTML = '';
-      const key = currentMode === 'district' ? 'dNorm' : 'cNorm';
-      const groups = {};
-      
-      RAW_DATA.forEach(d => {
-        const name = d[key];
-        if(!groups[name]) groups[name] = [];
-        groups[name].push(d);
-      });
-      
-      Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).forEach(([name, items]) => {
-        const btn = document.createElement('button');
-        btn.className = 'cluster-btn';
-        btn.innerHTML = `${name}<small>${items.length} текстур${items.length>MAX_VISIBLE? ` (покажем первые ${MAX_VISIBLE})` : ''}</small>`;
-        btn.addEventListener('click', () => {
-          selector.classList.add('hidden');
-          loadCluster(items);
-        });
-        grid.appendChild(btn);
-      });
+    if (intersects.length > 0) {
+        hoveredMesh = intersects[0].object;
+        if (hoveredMesh !== selectedMesh) {
+            hoveredMesh.scale.lerp(new THREE.Vector3(1.22, 1.22, 1.22), 0.15);
+            app.style.cursor = 'pointer';
+        }
+    } else {
+        hoveredMesh = null;
+        app.style.cursor = 'grab';
+    }
+}
+
+function showInfoPanel(data) {
+    valName.textContent = data.name;
+    valDistrict.textContent = data.district;
+    valMaterial.textContent = data.material;
+    valWhat.textContent = data.whatIsIt;
+    valId.textContent = `#${String(data.id).padStart(2, '0')}`;
+    infoPanel.classList.add('visible');
+}
+
+function hideInfoPanel() {
+    infoPanel.classList.remove('visible');
+}
+
+function selectMesh(mesh) {
+    if (selectedMesh === mesh) {
+        // Отмена выбора
+        selectedMesh.scale.set(1, 1, 1);
+        selectedMesh.material.opacity = 1;
+        selectedMesh = null;
+        hideInfoPanel();
+        controls.autoRotate = true;
+        return;
+    }
+    // Сброс предыдущего
+    if (selectedMesh) {
+        selectedMesh.scale.set(1, 1, 1);
+        selectedMesh.material.opacity = 1;
+    }
+    // Выбор нового
+    selectedMesh = mesh;
+    selectedMesh.scale.set(CONFIG.focusScale, CONFIG.focusScale, CONFIG.focusScale);
+    selectedMesh.material.opacity = 1;
+    
+    // Затемнение остальных
+    meshes.forEach(m => {
+        if (m !== selectedMesh) {
+            m.material.opacity = CONFIG.dimOpacity;
+        }
+    });
+    
+    showInfoPanel(mesh.userData);
+    controls.autoRotate = false;
+}
+
+// События
+app.addEventListener('mousemove', (e) => {
+    updateMouse(e);
+    checkHover();
+});
+
+app.addEventListener('click', (e) => {
+    updateMouse(e);
+    checkHover();
+    if (hoveredMesh) {
+        selectMesh(hoveredMesh);
+    } else if (!selectedMesh) {
+        controls.autoRotate = true;
+    }
+});
+
+infoCloseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (selectedMesh) {
+        selectedMesh.scale.set(1, 1, 1);
+        selectedMesh.material.opacity = 1;
+        selectedMesh = null;
+        hideInfoPanel();
+        controls.autoRotate = true;
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && selectedMesh) {
+        selectedMesh.scale.set(1, 1, 1);
+        selectedMesh.material.opacity = 1;
+        selectedMesh = null;
+        hideInfoPanel();
+        controls.autoRotate = true;
+    }
+});
+
+app.addEventListener('touchstart', () => { controls.autoRotate = false; }, { passive: true });
+app.addEventListener('touchend', () => { setTimeout(() => controls.autoRotate = true, 2500); });
+
+/* ===================================================== */
+/*                  🔄 АНИМАЦИЯ                          */
+/* ===================================================== */
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    group.rotation.y += CONFIG.rotationSpeed;
+
+    // Лёгкое покачивание при наведении
+    if (hoveredMesh && hoveredMesh !== selectedMesh) {
+        hoveredMesh.rotation.z = Math.sin(Date.now() * 0.002) * 0.06;
     }
 
-    // Клик по 3D
-    const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2();
-    renderer?.domElement?.addEventListener('click', e => {
-      mouse.x = (e.clientX/window.innerWidth)*2-1; mouse.y = -(e.clientY/window.innerHeight)*2+1;
-      raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(activeMeshes);
-      if(hits.length) selectMesh(hits[0].object);
+    // Все невыбранные текстуры смотрят на камеру
+    meshes.forEach(m => {
+        if (m !== selectedMesh) {
+            m.lookAt(camera.position);
+        }
     });
 
-    function selectMesh(m) {
-      const panel = document.getElementById('info-panel');
-      document.getElementById('val-category').textContent = m.userData.c;
-      document.getElementById('val-material').textContent = m.userData.dt;
-      document.getElementById('val-district').textContent = m.userData.d;
-      document.getElementById('val-what').textContent = m.userData.w;
-      document.getElementById('val-id').textContent = `#${String(m.userData.i).padStart(3,'0')}`;
-      
-      const btn = document.getElementById('download-btn');
-      btn.href = `https://raw.githubusercontent.com/chudarraya/vladivostok-textures/main/1%20(${m.userData.i}).${m.userData.i===1?'png':'JPG'}`;
-      btn.download = `VDK_${m.userData.i}.jpg`; btn.style.display='inline-flex';
-      
-      panel.classList.add('visible'); controls.autoRotate=false;
-    }
+    renderer.render(scene, camera);
+}
 
-    document.getElementById('info-close').addEventListener('click', () => {
-      document.getElementById('info-panel').classList.remove('visible');
-      document.getElementById('download-btn').style.display='none';
-      controls.autoRotate=true;
-    });
+/* ===================================================== */
+/*                  📐 RESIZE                            */
+/* ===================================================== */
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
-    window.addEventListener('keydown', e => {
-      if(e.key==='Escape') document.getElementById('info-close').click();
-    });
-
-    // Запуск
-    initScene();
-  </script>
-</body>
-</html>
+// Запуск
+animate();
+app.style.cursor = 'grab';
+</script>
